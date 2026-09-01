@@ -1,0 +1,266 @@
+<!doctype html>
+<html>
+<head>
+    <title>OpenSearch API Reference</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <style>
+      /* OpenSearch Light Mode */
+      .light-mode {
+        --scalar-color-1: #1a1a2e;
+        --scalar-color-2: rgba(0, 59, 92, 0.7);
+        --scalar-color-3: rgba(0, 59, 92, 0.45);
+        --scalar-color-accent: #0a7b8f;
+        --scalar-background-1: #ffffff;
+        --scalar-background-2: #f5f7fa;
+        --scalar-background-3: #eef1f6;
+        --scalar-background-accent: rgba(10, 123, 143, 0.08);
+        --scalar-border-color: rgba(0, 59, 92, 0.1);
+      }
+      .light-mode .sidebar {
+        --scalar-sidebar-background-1: #003b5c;
+        --scalar-sidebar-item-hover-color: #ffffff;
+        --scalar-sidebar-item-hover-background: rgba(255, 255, 255, 0.1);
+        --scalar-sidebar-item-active-background: rgba(10, 123, 143, 0.3);
+        --scalar-sidebar-border-color: rgba(255, 255, 255, 0.1);
+        --scalar-sidebar-color-1: rgba(255, 255, 255, 0.95);
+        --scalar-sidebar-color-2: rgba(255, 255, 255, 0.7);
+        --scalar-sidebar-color-active: #ffffff;
+        --scalar-sidebar-search-background: rgba(255, 255, 255, 0.1);
+        --scalar-sidebar-search-border-color: rgba(255, 255, 255, 0.15);
+        --scalar-sidebar-search-color: rgba(255, 255, 255, 0.5);
+      }
+
+      /* OpenSearch Dark Mode */
+      .dark-mode {
+        --scalar-color-1: rgba(255, 255, 255, 0.9);
+        --scalar-color-2: rgba(255, 255, 255, 0.55);
+        --scalar-color-3: rgba(255, 255, 255, 0.35);
+        --scalar-color-accent: #3cc5d8;
+        --scalar-background-1: #0d1b2a;
+        --scalar-background-2: #132238;
+        --scalar-background-3: #1a2d47;
+        --scalar-background-accent: rgba(60, 197, 216, 0.1);
+        --scalar-border-color: rgba(255, 255, 255, 0.08);
+      }
+      .dark-mode .sidebar {
+        --scalar-sidebar-background-1: #091521;
+        --scalar-sidebar-item-hover-color: #ffffff;
+        --scalar-sidebar-item-hover-background: rgba(255, 255, 255, 0.05);
+        --scalar-sidebar-item-active-background: rgba(60, 197, 216, 0.15);
+        --scalar-sidebar-border-color: rgba(255, 255, 255, 0.06);
+        --scalar-sidebar-color-1: rgba(255, 255, 255, 0.85);
+        --scalar-sidebar-color-2: rgba(255, 255, 255, 0.5);
+        --scalar-sidebar-color-active: #3cc5d8;
+        --scalar-sidebar-search-background: rgba(255, 255, 255, 0.06);
+        --scalar-sidebar-search-border-color: rgba(255, 255, 255, 0.08);
+        --scalar-sidebar-search-color: rgba(255, 255, 255, 0.35);
+      }
+
+      /* HTTP method badge colors — OpenSearch palette */
+      .light-mode {
+        --scalar-color-green: #0a7b8f;
+        --scalar-color-blue: #005eb8;
+        --scalar-color-orange: #ef6c00;
+        --scalar-color-red: #c62828;
+      }
+      .dark-mode {
+        --scalar-color-green: #3cc5d8;
+        --scalar-color-blue: #5b9bd5;
+        --scalar-color-orange: #ffa040;
+        --scalar-color-red: #ef5350;
+      }
+
+      /* Distribution banner */
+      .os-dist-banner {
+        background: #003b5c;
+        color: #fff;
+        padding: 6px 20px;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        z-index: 1000;
+        position: sticky;
+        top: 0;
+      }
+      .os-dist-banner svg { height: 22px; width: 22px; flex-shrink: 0; }
+      .os-dist-banner .title { font-weight: 500; }
+      .os-dist-banner .badge {
+        padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: 600;
+      }
+      .os-dist-banner .badge.oss { background: #4caf50; }
+      .os-dist-banner .badge.aos { background: #0a7b8f; }
+      .os-dist-banner .badge.aoss { background: #ef6c00; }
+      .os-dist-banner .stats { font-size: 11px; opacity: 0.7; }
+      .os-dist-banner .switcher-group {
+        display: flex; align-items: center; gap: 8px; margin-left: auto;
+      }
+      .os-dist-banner .switcher-label {
+        font-size: 11px; opacity: 0.6;
+      }
+      .os-dist-banner select {
+        appearance: none; -webkit-appearance: none;
+        background: rgba(255,255,255,0.1) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(255,255,255,0.7)'/%3E%3C/svg%3E") no-repeat right 8px center;
+        border: 1px solid rgba(255,255,255,0.25); border-radius: 4px;
+        color: #fff; font-size: 12px; font-weight: 500; font-family: inherit;
+        padding: 4px 24px 4px 10px; cursor: pointer; outline: none;
+        transition: border-color 0.15s, background-color 0.15s;
+      }
+      .os-dist-banner select:hover {
+        border-color: rgba(255,255,255,0.5); background-color: rgba(255,255,255,0.15);
+      }
+      .os-dist-banner select:focus {
+        border-color: #0a7b8f;
+      }
+      .os-dist-banner select option {
+        background: #003b5c; color: #fff;
+      }
+      /* Back to top button */
+      .back-to-top {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #003b5c;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        line-height: 36px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        opacity: 0;
+        pointer-events: none;
+        transition: none;
+        z-index: 999;
+      }
+      .back-to-top.visible {
+        opacity: 0.8;
+        pointer-events: auto;
+      }
+      .back-to-top:hover {
+        opacity: 1;
+        background: #0a7b8f;
+      }
+    </style>
+</head>
+<body>
+    <!-- Back to top -->
+    <button class="back-to-top" id="back-to-top" onclick="window.scrollTo(0,0)" title="Back to top">&#8593;</button>
+    <!-- Distribution banner -->
+    <div class="os-dist-banner" id="dist-banner"></div>
+    <!-- Scalar renders here -->
+    <div id="app"></div>
+
+    <script>
+      // Determine distribution from URL
+      const params = new URLSearchParams(window.location.search);
+      const dist = params.get('dist') || 'oss';
+
+      const configs = {
+        oss:  { label: 'OpenSearch (OSS)', badge: 'oss', spec: 'build/opensearch-openapi-clean.json', stats: '696 operations' },
+        aos:  { label: 'Amazon OpenSearch Service', badge: 'aos', spec: 'build/opensearch-openapi-clean.json', stats: '696 operations + UltraWarm/Cold' },
+        aoss: { label: 'Amazon OpenSearch Serverless', badge: 'aoss', spec: 'build/opensearch-openapi-aoss-clean.json', stats: '701 operations (151 blocked)' },
+      };
+      const cfg = configs[dist] || configs.oss;
+      document.title = `OpenSearch API — ${cfg.label}`;
+
+      // Render banner
+      document.getElementById('dist-banner').innerHTML = `
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="45" cy="45" r="35" fill="none" stroke="#0a7b8f" stroke-width="8"/>
+          <circle cx="45" cy="45" r="14" fill="#0a7b8f"/>
+          <line x1="70" y1="70" x2="92" y2="92" stroke="#ef6c00" stroke-width="10" stroke-linecap="round"/>
+        </svg>
+        <span class="title">OpenSearch API Reference</span>
+        <span class="stats">${cfg.stats}</span>
+        <div class="switcher-group">
+          <span class="switcher-label">Distribution:</span>
+          <select onchange="window.location.href='index.html?dist='+this.value">
+            <option value="oss" ${dist === 'oss' ? 'selected' : ''}>OpenSearch (OSS)</option>
+            <option value="aos" ${dist === 'aos' ? 'selected' : ''}>Amazon OpenSearch Service</option>
+            <option value="aoss" ${dist === 'aoss' ? 'selected' : ''}>Amazon OpenSearch Serverless</option>
+          </select>
+        </div>
+      `;
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+    <script>
+      // Back to top visibility
+      window.addEventListener('scroll', () => {
+        document.getElementById('back-to-top').classList.toggle('visible', window.scrollY > 400);
+      });
+
+      Scalar.createApiReference('#app', {
+        url: cfg.spec,
+        theme: 'none',
+        layout: 'modern',
+
+        // Appearance
+        darkMode: false,
+        favicon: 'favicon.ico',
+
+        // Sidebar
+        showSidebar: true,
+        operationTitleSource: 'path',
+        defaultOpenFirstTag: true,
+        defaultOpenAllTags: false,
+
+        // Content display
+        hideModels: true,
+        expandAllResponses: true,
+        orderSchemaPropertiesBy: 'preserve',
+
+        // Hide interactive features (read-only docs)
+        showDeveloperTools: 'never',
+        hideTestRequestButton: true,
+        hideClientButton: true,
+        agent: { disabled: true },
+        mcp: { disabled: true, name: '', url: '' },
+
+        // Download
+        hideDownloadButton: false,
+        documentDownloadType: 'both',
+
+        // Code examples: keep curl, python, java, js, go
+        searchHotKey: 'k',
+        defaultHttpClient: {
+          targetKey: 'shell',
+          clientKey: 'curl',
+        },
+        hiddenClients: {
+          c: true,
+          clojure: true,
+          csharp: true,
+          dart: true,
+          fsharp: true,
+          http: true,
+          julia: true,
+          kotlin: true,
+          objc: true,
+          ocaml: true,
+          php: true,
+          powershell: true,
+          r: true,
+          ruby: true,
+          rust: true,
+          swift: true,
+        },
+
+        // Privacy
+        telemetry: false,
+
+        metaData: {
+          title: 'OpenSearch API Reference',
+          description: 'OpenSearch REST API documentation for OSS, AOS, and AOSS distributions',
+        },
+      })
+    </script>
+</body>
+</html>
