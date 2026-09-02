@@ -29,6 +29,7 @@ tools/
   build-distribution-specs.sh  the build (all paths repo-relative)
   strip-deprecated.py          removes deprecated ops, injects "Minimum version"
   inject-tags.py               maps x-operation-group prefixes to Scalar sidebar groups
+  strip-refresh.py             (AOSS) removes the write-op refresh param (AOSS rejects all explicit values)
 build/                        generated output (git-tracked; the site loads *-tagged.json)
 ```
 
