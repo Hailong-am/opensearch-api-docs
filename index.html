@@ -163,9 +163,9 @@
       const dist = params.get('dist') || 'oss';
 
       const configs = {
-        oss:  { label: 'OpenSearch (OSS)', badge: 'oss', spec: 'build/opensearch-openapi-clean.json', stats: '696 operations' },
-        aos:  { label: 'Amazon OpenSearch Service', badge: 'aos', spec: 'build/opensearch-openapi-clean.json', stats: '696 operations + UltraWarm/Cold' },
-        aoss: { label: 'Amazon OpenSearch Serverless', badge: 'aoss', spec: 'build/opensearch-openapi-aoss-clean.json', stats: '701 operations (151 blocked)' },
+        oss:  { label: 'OpenSearch (OSS)', badge: 'oss', spec: 'build/opensearch-openapi-oss-tagged.json', stats: '696 operations' },
+        aos:  { label: 'Amazon OpenSearch Service', badge: 'aos', spec: 'build/opensearch-openapi-aos-tagged.json', stats: '683 operations (includes UltraWarm + Cold Tier)' },
+        aoss: { label: 'Amazon OpenSearch Serverless', badge: 'aoss', spec: 'build/opensearch-openapi-aoss-tagged.json', stats: '605 operations (includes snapshot extensions)' },
       };
       const cfg = configs[dist] || configs.oss;
       document.title = `OpenSearch API — ${cfg.label}`;
