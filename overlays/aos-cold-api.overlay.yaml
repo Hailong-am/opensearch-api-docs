@@ -1,0 +1,231 @@
+overlay: 1.0.0
+info:
+  title: AOS Cold Tier API extensions
+  version: 1.0.0
+extends: ./opensearch-openapi.yaml
+
+# Adds the AOS-proprietary Cold tier (/_cold/*) endpoints.
+# These paths do not exist in OSS OpenSearch -- they are AOS-only,
+# available on domains with cold storage enabled.
+#
+# Source: AOS gap analysis (opensearch-aos-oss-gap.md)
+#   /_cold/migration/{index}/_cold    POST  migrate index to cold tier
+#   /_cold/migration/{index}/_warm    POST  migrate cold index back to warm
+#   /_cold/migration/_cancel/{index}  POST  cancel cold migration
+#   /_cold/migration/{index}/_status  GET   cold migration status
+#   /_cold/migration/_status          GET   list all cold migrations
+#   /_cold/indices/_search            POST  search cold indices
+#   /_cold/_catalog                   GET   cold tier catalog
+#
+# All endpoints are AOS-only (cold tier not available on OSS or AOSS).
+
+actions:
+
+  # -----------------------------------------------------------------------
+  # PATH: POST /_cold/migration/{index}/_cold
+  # -----------------------------------------------------------------------
+  - target: "$.paths"
+    description: Add POST /_cold/migration/{index}/_cold (warm-to-cold migration)
+    update:
+      "/_cold/migration/{index}/_cold":
+        post:
+          operationId: cold.migrate_to_cold
+          x-operation-group: cold.migrate_to_cold
+          x-version-added: '1.0'
+          description: Migrates an index from warm storage to cold storage.
+          parameters:
+            - $ref: '#/components/parameters/cold.migrate_to_cold::path.index'
+          responses:
+            '200':
+              $ref: '#/components/responses/cold.migrate_to_cold@200'
+
+  # -----------------------------------------------------------------------
+  # PATH: POST /_cold/migration/{index}/_warm
+  # -----------------------------------------------------------------------
+  - target: "$.paths"
+    description: Add POST /_cold/migration/{index}/_warm (cold-to-warm migration)
+    update:
+      "/_cold/migration/{index}/_warm":
+        post:
+          operationId: cold.migrate_to_warm
+          x-operation-group: cold.migrate_to_warm
+          x-version-added: '1.0'
+          description: Migrates an index from cold storage back to warm storage.
+          parameters:
+            - $ref: '#/components/parameters/cold.migrate_to_warm::path.index'
+          responses:
+            '200':
+              $ref: '#/components/responses/cold.migrate_to_warm@200'
+
+  # -----------------------------------------------------------------------
+  # PATH: POST /_cold/migration/_cancel/{index}
+  # -----------------------------------------------------------------------
+  - target: "$.paths"
+    description: Add POST /_cold/migration/_cancel/{index} (cancel cold migration)
+    update:
+      "/_cold/migration/_cancel/{index}":
+        post:
+          operationId: cold.cancel_migration
+          x-operation-group: cold.cancel_migration
+          x-version-added: '1.0'
+          description: Cancels an ongoing cold tier migration for the specified index.
+          parameters:
+            - $ref: '#/components/parameters/cold.cancel_migration::path.index'
+          responses:
+            '200':
+              $ref: '#/components/responses/cold.cancel_migration@200'
+
+  # -----------------------------------------------------------------------
+  # PATH: GET /_cold/migration/{index}/_status
+  # -----------------------------------------------------------------------
+  - target: "$.paths"
+    description: Add GET /_cold/migration/{index}/_status (single-index cold migration status)
+    update:
+      "/_cold/migration/{index}/_status":
+        get:
+          operationId: cold.get_migration_status
+          x-operation-group: cold.get_migration_status
+          x-version-added: '1.0'
+          description: Returns the cold tier migration status for a specific index.
+          parameters:
+            - $ref: '#/components/parameters/cold.get_migration_status::path.index'
+          responses:
+            '200':
+              $ref: '#/components/responses/cold.get_migration_status@200'
+
+  # -----------------------------------------------------------------------
+  # PATH: GET /_cold/migration/_status
+  # -----------------------------------------------------------------------
+  - target: "$.paths"
+    description: Add GET /_cold/migration/_status (list all cold migrations)
+    update:
+      "/_cold/migration/_status":
+        get:
+          operationId: cold.list_migration_status
+          x-operation-group: cold.list_migration_status
+          x-version-added: '1.0'
+          description: Returns the cold tier migration status for all indices.
+          responses:
+            '200':
+              $ref: '#/components/responses/cold.list_migration_status@200'
+
+  # -----------------------------------------------------------------------
+  # PATH: POST /_cold/indices/_search
+  # -----------------------------------------------------------------------
+  - target: "$.paths"
+    description: Add POST /_cold/indices/_search (search cold indices)
+    update:
+      "/_cold/indices/_search":
+        post:
+          operationId: cold.search
+          x-operation-group: cold.search
+          x-version-added: '1.0'
+          description: Searches data stored in cold tier indices.
+          requestBody:
+            $ref: '#/components/requestBodies/search'
+          responses:
+            '200':
+              $ref: '#/components/responses/search@200'
+
+  # -----------------------------------------------------------------------
+  # PATH: GET /_cold/_catalog
+  # -----------------------------------------------------------------------
+  - target: "$.paths"
+    description: Add GET /_cold/_catalog (cold tier catalog)
+    update:
+      "/_cold/_catalog":
+        get:
+          operationId: cold.catalog
+          x-operation-group: cold.catalog
+          x-version-added: '1.0'
+          description: Returns the cold tier catalog listing all cold indices.
+          responses:
+            '200':
+              $ref: '#/components/responses/cold.catalog@200'
+
+  # -----------------------------------------------------------------------
+  # Shared parameters
+  # -----------------------------------------------------------------------
+  - target: "$.components.parameters"
+    description: Add shared Cold tier path parameters
+    update:
+      "cold.migrate_to_cold::path.index":
+        name: index
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Name of the index to migrate to cold storage.
+      "cold.migrate_to_warm::path.index":
+        name: index
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Name of the cold index to migrate back to warm storage.
+      "cold.cancel_migration::path.index":
+        name: index
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Name of the index whose cold migration to cancel.
+      "cold.get_migration_status::path.index":
+        name: index
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Name of the index to check cold migration status for.
+
+  # -----------------------------------------------------------------------
+  # Shared responses
+  # -----------------------------------------------------------------------
+  - target: "$.components.responses"
+    description: Add Cold tier migration responses
+    update:
+      "cold.migrate_to_cold@200":
+        description: Cold migration initiated successfully.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                acknowledged:
+                  type: boolean
+      "cold.migrate_to_warm@200":
+        description: Warm migration from cold initiated successfully.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                acknowledged:
+                  type: boolean
+      "cold.cancel_migration@200":
+        description: Cold migration cancelled successfully.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                acknowledged:
+                  type: boolean
+      "cold.get_migration_status@200":
+        description: Cold migration status for the index.
+        content:
+          application/json:
+            schema:
+              type: object
+      "cold.list_migration_status@200":
+        description: Cold migration status for all indices.
+        content:
+          application/json:
+            schema:
+              type: object
+      "cold.catalog@200":
+        description: Cold tier catalog listing.
+        content:
+          application/json:
+            schema:
+              type: object

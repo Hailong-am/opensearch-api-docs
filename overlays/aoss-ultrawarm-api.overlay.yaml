@@ -1,0 +1,394 @@
+overlay: 1.0.0
+info:
+  title: AOS UltraWarm migration API extensions
+  version: 1.0.0
+extends: ./opensearch-openapi.yaml
+
+# Adds the AOS-proprietary UltraWarm (/_ultrawarm/migration/*) endpoints.
+# These paths do not exist in OSS OpenSearch at all -- absent from the allowlist
+# and confirmed absent from opensearch-cluster-spec-3.7-full.yaml (820 paths).
+#
+# Source: SearchServicesESKraken repo (opensearch-3.7.0 branch)
+#   RestWarmMigrationAction      POST /_ultrawarm/migration/{index}/_warm
+#   RestHotMigrationAction       POST /_ultrawarm/migration/{index}/_hot
+#   RestWarmToColdMigrationAction POST /_ultrawarm/migration/{index}/_cold
+#   RestCancelMigrationAction    POST /_ultrawarm/migration/_cancel/{index}
+#   RestGetMigrationAction       GET  /_ultrawarm/migration/{index}/_status
+#   RestListMigrationsAction     GET  /_ultrawarm/migration/_status
+#   RestUpdateMigrationAction    PUT  /_ultrawarm/migration/{index}
+#
+# All endpoints are AOS-only (x-distributions: [amazon-managed]).
+# 'amazon-managed' covers both AOS provisioned and AOSS (where applicable).
+
+actions:
+
+  # -----------------------------------------------------------------------
+  # PATH: POST /_ultrawarm/migration/{index}/_warm
+  # -----------------------------------------------------------------------
+  - target: "$.paths"
+    description: Add POST /_ultrawarm/migration/{index}/_warm (hot-to-warm migration)
+    update:
+      /_ultrawarm/migration/{index}/_warm:
+        post:
+          operationId: ultrawarm.migrate_to_warm.0
+          x-operation-group: ultrawarm.migrate_to_warm
+          x-distributions:
+            - amazon-managed
+          x-version-added: '7.1'
+          description: >-
+            AOS only. Migrates an index from hot storage to UltraWarm (warm) storage.
+            The operation is asynchronous -- use GET /_ultrawarm/migration/{index}/_status
+            to poll migration progress.
+          externalDocs:
+            url: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ultrawarm.html
+          parameters:
+            - $ref: '#/components/parameters/ultrawarm.migrate___path.index'
+            - $ref: '#/components/parameters/ultrawarm.migrate___query.cluster_manager_timeout'
+            - $ref: '#/components/parameters/_global___query.pretty'
+            - $ref: '#/components/parameters/_global___query.human'
+            - $ref: '#/components/parameters/_global___query.error_trace'
+            - $ref: '#/components/parameters/_global___query.source'
+            - $ref: '#/components/parameters/_global___query.filter_path'
+          responses:
+            '200':
+              $ref: '#/components/responses/ultrawarm.migrate___200'
+
+  # -----------------------------------------------------------------------
+  # PATH: POST /_ultrawarm/migration/{index}/_hot
+  # -----------------------------------------------------------------------
+  - target: "$.paths"
+    description: Add POST /_ultrawarm/migration/{index}/_hot (warm-to-hot migration)
+    update:
+      /_ultrawarm/migration/{index}/_hot:
+        post:
+          operationId: ultrawarm.migrate_to_hot.0
+          x-operation-group: ultrawarm.migrate_to_hot
+          x-distributions:
+            - amazon-managed
+          x-version-added: '7.1'
+          description: >-
+            AOS only. Migrates an index from UltraWarm (warm) storage back to hot storage.
+            The operation is asynchronous.
+          externalDocs:
+            url: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ultrawarm.html
+          parameters:
+            - $ref: '#/components/parameters/ultrawarm.migrate___path.index'
+            - $ref: '#/components/parameters/ultrawarm.migrate___query.cluster_manager_timeout'
+            - $ref: '#/components/parameters/_global___query.pretty'
+            - $ref: '#/components/parameters/_global___query.human'
+            - $ref: '#/components/parameters/_global___query.error_trace'
+            - $ref: '#/components/parameters/_global___query.source'
+            - $ref: '#/components/parameters/_global___query.filter_path'
+          responses:
+            '200':
+              $ref: '#/components/responses/ultrawarm.migrate___200'
+
+  # -----------------------------------------------------------------------
+  # PATH: POST /_ultrawarm/migration/{index}/_cold
+  # -----------------------------------------------------------------------
+  - target: "$.paths"
+    description: Add POST /_ultrawarm/migration/{index}/_cold (warm-to-cold migration)
+    update:
+      /_ultrawarm/migration/{index}/_cold:
+        post:
+          operationId: ultrawarm.migrate_to_cold.0
+          x-operation-group: ultrawarm.migrate_to_cold
+          x-distributions:
+            - amazon-managed
+          x-version-added: '7.10'
+          description: >-
+            AOS only. Migrates an index from UltraWarm (warm) storage to Cold storage.
+            The operation is asynchronous.
+          externalDocs:
+            url: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/cold-storage.html
+          parameters:
+            - $ref: '#/components/parameters/ultrawarm.migrate___path.index'
+            - $ref: '#/components/parameters/ultrawarm.migrate___query.cluster_manager_timeout'
+            - $ref: '#/components/parameters/_global___query.pretty'
+            - $ref: '#/components/parameters/_global___query.human'
+            - $ref: '#/components/parameters/_global___query.error_trace'
+            - $ref: '#/components/parameters/_global___query.source'
+            - $ref: '#/components/parameters/_global___query.filter_path'
+          responses:
+            '200':
+              $ref: '#/components/responses/ultrawarm.migrate___200'
+
+  # -----------------------------------------------------------------------
+  # PATH: POST /_ultrawarm/migration/_cancel/{index}
+  # -----------------------------------------------------------------------
+  - target: "$.paths"
+    description: Add POST /_ultrawarm/migration/_cancel/{index} (cancel migration)
+    update:
+      /_ultrawarm/migration/_cancel/{index}:
+        post:
+          operationId: ultrawarm.cancel_migration.0
+          x-operation-group: ultrawarm.cancel_migration
+          x-distributions:
+            - amazon-managed
+          x-version-added: '7.1'
+          description: >-
+            AOS only. Cancels an in-progress UltraWarm index migration.
+            Only one index can be cancelled per request.
+          externalDocs:
+            url: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ultrawarm.html
+          parameters:
+            - $ref: '#/components/parameters/ultrawarm.migrate___path.index'
+            - $ref: '#/components/parameters/_global___query.pretty'
+            - $ref: '#/components/parameters/_global___query.human'
+            - $ref: '#/components/parameters/_global___query.error_trace'
+            - $ref: '#/components/parameters/_global___query.source'
+            - $ref: '#/components/parameters/_global___query.filter_path'
+          responses:
+            '200':
+              $ref: '#/components/responses/ultrawarm.migrate___200'
+
+  # -----------------------------------------------------------------------
+  # PATH: GET /_ultrawarm/migration/{index}/_status
+  # -----------------------------------------------------------------------
+  - target: "$.paths"
+    description: Add GET /_ultrawarm/migration/{index}/_status (single-index migration status)
+    update:
+      /_ultrawarm/migration/{index}/_status:
+        get:
+          operationId: ultrawarm.get_migration_status.0
+          x-operation-group: ultrawarm.get_migration_status
+          x-distributions:
+            - amazon-managed
+          x-version-added: '7.1'
+          description: >-
+            AOS only. Returns the migration status for a specific index.
+            Returns HTTP 400 when no migration is currently active for the index.
+          externalDocs:
+            url: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ultrawarm.html
+          parameters:
+            - $ref: '#/components/parameters/ultrawarm.migrate___path.index'
+            - $ref: '#/components/parameters/_global___query.pretty'
+            - $ref: '#/components/parameters/_global___query.human'
+            - $ref: '#/components/parameters/_global___query.error_trace'
+            - $ref: '#/components/parameters/_global___query.source'
+            - $ref: '#/components/parameters/_global___query.filter_path'
+          responses:
+            '200':
+              $ref: '#/components/responses/ultrawarm.get_migration_status___200'
+
+  # -----------------------------------------------------------------------
+  # PATH: GET /_ultrawarm/migration/_status
+  # -----------------------------------------------------------------------
+  - target: "$.paths"
+    description: Add GET /_ultrawarm/migration/_status (cluster-wide migration status list)
+    update:
+      /_ultrawarm/migration/_status:
+        get:
+          operationId: ultrawarm.list_migration_status.0
+          x-operation-group: ultrawarm.list_migration_status
+          x-distributions:
+            - amazon-managed
+          x-version-added: '7.1'
+          description: >-
+            AOS only. Returns the migration status for all indices currently undergoing
+            UltraWarm migration. Equivalent to /_cat/ultrawarm but returns JSON.
+          externalDocs:
+            url: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ultrawarm.html
+          parameters:
+            - $ref: '#/components/parameters/_global___query.pretty'
+            - $ref: '#/components/parameters/_global___query.human'
+            - $ref: '#/components/parameters/_global___query.error_trace'
+            - $ref: '#/components/parameters/_global___query.source'
+            - $ref: '#/components/parameters/_global___query.filter_path'
+          responses:
+            '200':
+              $ref: '#/components/responses/ultrawarm.list_migration_status___200'
+
+  # -----------------------------------------------------------------------
+  # PATH: PUT /_ultrawarm/migration/{index}
+  # -----------------------------------------------------------------------
+  - target: "$.paths"
+    description: Add PUT /_ultrawarm/migration/{index} (update migration)
+    update:
+      /_ultrawarm/migration/{index}:
+        put:
+          operationId: ultrawarm.update_migration.0
+          x-operation-group: ultrawarm.update_migration
+          x-distributions:
+            - amazon-managed
+          x-version-added: '7.1'
+          description: >-
+            AOS only. Updates the configuration of an in-progress UltraWarm migration.
+          externalDocs:
+            url: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ultrawarm.html
+          parameters:
+            - $ref: '#/components/parameters/ultrawarm.migrate___path.index'
+            - $ref: '#/components/parameters/_global___query.pretty'
+            - $ref: '#/components/parameters/_global___query.human'
+            - $ref: '#/components/parameters/_global___query.error_trace'
+            - $ref: '#/components/parameters/_global___query.source'
+            - $ref: '#/components/parameters/_global___query.filter_path'
+          requestBody:
+            $ref: '#/components/requestBodies/ultrawarm.update_migration'
+          responses:
+            '200':
+              $ref: '#/components/responses/ultrawarm.migrate___200'
+
+  # -----------------------------------------------------------------------
+  # COMPONENTS: parameters
+  # -----------------------------------------------------------------------
+  - target: "$.components.parameters"
+    description: Add shared UltraWarm path and query parameters
+    update:
+      ultrawarm.migrate___path.index:
+        name: index
+        in: path
+        required: true
+        description: The name of the index to migrate. Only a single index is supported per request.
+        schema:
+          type: string
+        x-distributions:
+          - amazon-managed
+
+      ultrawarm.migrate___query.cluster_manager_timeout:
+        name: cluster_manager_timeout
+        in: query
+        required: false
+        description: >-
+          The amount of time to wait for a response from the cluster manager node.
+          Supports time units (e.g. "30s", "1m").
+        schema:
+          type: string
+        x-distributions:
+          - amazon-managed
+
+  # -----------------------------------------------------------------------
+  # COMPONENTS: responses
+  # -----------------------------------------------------------------------
+  - target: "$.components.responses"
+    description: Add UltraWarm migration responses
+    update:
+      ultrawarm.migrate___200:
+        description: Migration request accepted.
+        content:
+          application/json:
+            schema:
+              type: object
+              x-distributions:
+                - amazon-managed
+              properties:
+                acknowledged:
+                  type: boolean
+                  description: Whether the migration request was accepted.
+
+      ultrawarm.get_migration_status___200:
+        description: Migration status for the requested index.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ultrawarm._common___MigrationStatusResponse'
+
+      ultrawarm.list_migration_status___200:
+        description: List of all active migrations across the cluster.
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/ultrawarm._common___MigrationStatusEntry'
+
+  # -----------------------------------------------------------------------
+  # COMPONENTS: schemas
+  # -----------------------------------------------------------------------
+  - target: "$.components.schemas"
+    description: Add UltraWarm migration schemas
+    update:
+      ultrawarm._common___MigrationStatusResponse:
+        type: object
+        x-distributions:
+          - amazon-managed
+        description: >-
+          Response from GET /_ultrawarm/migration/{index}/_status.
+          Contains the current migration state wrapped in a migration_status object.
+        properties:
+          migration_status:
+            $ref: '#/components/schemas/ultrawarm._common___MigrationStatus'
+
+      ultrawarm._common___MigrationStatus:
+        type: object
+        x-distributions:
+          - amazon-managed
+        description: Migration status for a single index.
+        properties:
+          index:
+            type: string
+            description: The index name.
+          state:
+            type: string
+            description: >-
+              Current migration state. Values include:
+              PENDING_FORCE_MERGE, RUNNING_FORCE_MERGE,
+              PENDING_FULL_SNAPSHOT, RUNNING_FULL_SNAPSHOT,
+              FINISHED_SHARD_RELOCATION, FAILED, FAILED_*.
+          migration_type:
+            type: string
+            description: Migration direction.
+            enum:
+              - HOT_TO_WARM
+              - WARM_TO_HOT
+              - WARM_TO_COLD
+          failure_reason:
+            type: string
+            description: Reason for failure when state begins with FAILED.
+          shard_level_status:
+            $ref: '#/components/schemas/ultrawarm._common___ShardLevelStatus'
+
+      ultrawarm._common___ShardLevelStatus:
+        type: object
+        x-distributions:
+          - amazon-managed
+        description: Per-shard migration counters.
+        properties:
+          pending:
+            type: integer
+            description: Shards waiting to start.
+          running:
+            type: integer
+            description: Shards currently migrating.
+          succeeded:
+            type: integer
+            description: Shards that completed successfully.
+          failed:
+            type: integer
+            description: Shards that failed.
+          total:
+            type: integer
+            description: Total shards in the migration.
+
+      ultrawarm._common___MigrationStatusEntry:
+        type: object
+        x-distributions:
+          - amazon-managed
+        description: A single entry in the cluster-wide migration status list.
+        properties:
+          index:
+            type: string
+            description: Index name.
+          migration_type:
+            type: string
+            description: Migration direction (HOT_TO_WARM, WARM_TO_HOT, WARM_TO_COLD).
+          state:
+            type: string
+            description: Current migration state.
+
+  # -----------------------------------------------------------------------
+  # COMPONENTS: requestBodies
+  # -----------------------------------------------------------------------
+  - target: "$.components.requestBodies"
+    description: Add UltraWarm update migration request body
+    update:
+      ultrawarm.update_migration:
+        description: Update migration configuration (body contents are implementation-defined).
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              x-distributions:
+                - amazon-managed
+              additionalProperties: true

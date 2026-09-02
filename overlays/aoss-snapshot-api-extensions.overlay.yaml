@@ -1,0 +1,127 @@
+overlay: 1.0.0
+info:
+  title: AOSS-specific snapshot API extensions
+  version: 1.0.0
+extends: ./opensearch-openapi.yaml
+
+# Adds three AOSS-only (amazon-serverless distribution) extensions to the
+# standard OpenSearch snapshot APIs discovered via JunoIndexingCoordinator
+# git log + name.equals() grep analysis (2026-08-04):
+#
+#   1. POST /_snapshot/{repo}/{snap}/_restore
+#      - sourceCollectionId: cross-collection restore (CCR), redirects S3 path
+#      - allow_regex: enables Java regex capture-groups in rename_pattern/replacement
+#
+#   2. GET  /_snapshot/{repo}/{snap}
+#      - sourceCollectionId: list snapshots from a source collection's repository
+#        (CCR preflight); entire source() method is AOSS-only, absent from OSS
+#
+#   3. PUT  /_snapshot/{repo}  (create/update repository)
+#      - crypto_settings: KMS encryption config for snapshot repositories
+
+actions:
+  # -----------------------------------------------------------------------
+  # 1. snapshot.restore requestBody -- add sourceCollectionId + allow_regex
+  # -----------------------------------------------------------------------
+  - target: "$.components.requestBodies['snapshot.restore'].content['application/json'].schema.properties"
+    description: >
+      Add two AOSS-only body fields to POST /_snapshot/{repo}/{snap}/_restore.
+      Both fields are absent from OSS RestoreSnapshotRequest.source() and would
+      cause IllegalArgumentException: Unknown parameter on a plain OSS cluster.
+    update:
+      sourceCollectionId:
+        x-distributions:
+          - amazon-serverless
+        type: string
+        pattern: '^[a-z0-9]{3,40}$'
+        description: >-
+          AOSS-only. The ID of the source collection to restore the snapshot
+          from. When set, the restore reads snapshot segment data from the
+          source collection's S3 path ({accountId}/{sourceCollectionId}/)
+          instead of the target collection's path, enabling cross-collection
+          restore (CCR). The CCR feature flag must be enabled for the account;
+          both collections must share the same type and KMS encryption context.
+          Omitting this field restores from the same collection's own snapshot.
+      allow_regex:
+        x-distributions:
+          - amazon-serverless
+        type: boolean
+        default: false
+        description: >-
+          AOSS-only. When true, interprets rename_pattern and
+          rename_replacement as regular expressions using Java
+          Matcher.appendReplacement semantics, allowing capture-group
+          back-references (e.g. $1). When false (default), the values are
+          treated as plain strings, matching standard OSS behaviour.
+
+  # -----------------------------------------------------------------------
+  # 2. snapshot.get operation -- add AOSS-only requestBody
+  #    OSS GET /_snapshot/{repo}/{snap} has no requestBody at all.
+  #    AOSS adds an entirely new source() method to GetSnapshotsRequest.
+  # -----------------------------------------------------------------------
+  - target: "$.paths['/_snapshot/{repository}/{snapshot}'].get"
+    description: >
+      Add an optional requestBody to GET /_snapshot/{repo}/{snap} for AOSS.
+      The OSS operation has no requestBody; AOSS adds sourceCollectionId to
+      allow listing snapshots from a source collection's repository as a
+      CCR preflight check.
+    update:
+      requestBody:
+        required: false
+        x-distributions:
+          - amazon-serverless
+        description: >-
+          AOSS-only. Scopes the snapshot listing to a source collection's
+          repository for cross-collection restore preflight.
+        content:
+          application/json:
+            schema:
+              type: object
+              x-distributions:
+                - amazon-serverless
+              properties:
+                sourceCollectionId:
+                  type: string
+                  pattern: '^[a-z0-9]{3,40}$'
+                  description: >-
+                    AOSS-only. The ID of the source collection whose snapshot
+                    repository to query. When set, the API lists snapshots from
+                    the source collection's S3 repository path instead of the
+                    target collection's path. Used for CCR preflight validation.
+                    Requires the CCR feature flag to be enabled for the account.
+
+  # -----------------------------------------------------------------------
+  # 3. snapshot.create_repository requestBody -- add crypto_settings
+  # -----------------------------------------------------------------------
+  - target: "$.components.requestBodies['snapshot.create_repository'].content['application/json'].schema.properties"
+    description: >
+      Add the AOSS-only crypto_settings field to PUT /_snapshot/{repo}.
+      Present in JunoIndexingCoordinator PutRepositoryRequest but absent
+      from the OSS equivalent; the worker layer (OpenSearch opensearch-3.7.0)
+      receives it via transport after the coordinator parses it.
+    update:
+      crypto_settings:
+        x-distributions:
+          - amazon-serverless
+        type: object
+        description: >-
+          AOSS-only. Encryption configuration for the snapshot repository.
+          Specifies the AWS KMS key and encryption context used to protect
+          snapshot data at rest. Required when creating an encrypted snapshot
+          repository in AOSS.
+        properties:
+          kms_key_arn:
+            type: string
+            description: >-
+              The ARN of the AWS KMS key used to encrypt snapshot data.
+            example: 'arn:aws:kms:us-west-2:123456789012:key/mrk-abc123'
+          encryption_context:
+            type: object
+            additionalProperties:
+              type: string
+            description: >-
+              Key-value pairs forming the encryption context passed to KMS
+              during cryptographic operations. Must match the context used
+              when the key was created.
+        required:
+          - kms_key_arn
