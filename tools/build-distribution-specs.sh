@@ -90,6 +90,12 @@ echo "  Step 2: Apply snapshot extension overlay"
 npx openapi-overlays-js \
   --openapi "$BUILD_DIR/opensearch-openapi-aoss.yaml" \
   --overlay "$OVERLAYS_DIR/aoss-snapshot-api-extensions.overlay.yaml" \
+  > "$BUILD_DIR/opensearch-openapi-aoss-snap.yaml"
+
+echo "  Step 3: Apply refresh-removal overlay (AOSS rejects all explicit refresh values)"
+npx openapi-overlays-js \
+  --openapi "$BUILD_DIR/opensearch-openapi-aoss-snap.yaml" \
+  --overlay "$OVERLAYS_DIR/aoss-refresh-remove.overlay.yaml" \
   > "$BUILD_DIR/opensearch-openapi-aoss-full.yaml"
 
 # --- Convert YAML -> JSON ---
@@ -104,12 +110,6 @@ for name in ['opensearch-openapi-oss', 'opensearch-openapi-aos-full', 'opensearc
         json.dump(data, f)
     print(f'  {name}: {len(data.get(\"paths\", {}))} paths -> JSON')
 "
-
-echo ""
-echo "--- Strip refresh (AOSS only) ---"
-# AOSS rejects every explicit refresh value (true and wait_for both 400;
-# only default false works), so the write-op refresh param is removed entirely.
-python3 "$TOOLS_DIR/strip-refresh.py" "$BUILD_DIR/opensearch-openapi-aoss-full.json" "$BUILD_DIR/opensearch-openapi-aoss-full.json"
 
 echo ""
 echo "--- Strip deprecated ---"
