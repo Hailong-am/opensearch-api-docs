@@ -1,0 +1,59 @@
+overlay: 1.0.0
+info:
+  title: AOSS refresh parameter constraint
+  version: 1.0.0
+extends: ./opensearch-openapi.yaml
+
+# Amazon OpenSearch Serverless (amazon-serverless distribution) does NOT support
+# an immediate refresh. AOSS is eventually consistent by design -- there is no
+# per-shard refresh cycle to force. Passing refresh=true (boolean true or the
+# string "true") returns:
+#     400 "true refresh policy is not supported"
+# Only refresh=false and refresh=wait_for are accepted.
+#
+# The `refresh` query parameter on every write op (index, create, update,
+# delete, bulk, update_by_query, delete_by_query, reindex, mget, get, ...) is a
+# $ref to the shared schema components/schemas/_common___Refresh. Constraining
+# that ONE schema propagates the AOSS restriction to all refresh parameters at
+# once, instead of touching each of the 19 parameter definitions individually.
+#
+# NOTE ON ACTION ORDER: openapi-overlays-js DEEP-MERGES on `update`, which
+# CONCATENATES arrays (a bare `update` on oneOf would append, leaving the `true`
+# variants in place). So we REMOVE the schema first, then re-add the constrained
+# version via an `update` on the parent `schemas` map. This yields a clean
+# replace.
+
+actions:
+  # 1. Remove the upstream Refresh schema (which permits true / false / wait_for).
+  - target: "$.components.schemas['_common___Refresh']"
+    description: >
+      AOSS-only. Drop the upstream Refresh schema so it can be replaced with the
+      AOSS-constrained version below (a plain update would concatenate the oneOf
+      arrays rather than replace them).
+    remove: true
+
+  # 2. Re-add it with only `false` and `wait_for`, plus the AOSS constraint note.
+  - target: "$.components.schemas"
+    description: >
+      AOSS-only. Re-add _common___Refresh without the immediate-refresh (`true`)
+      options. On AOSS, refresh=true is rejected with
+      400 "true refresh policy is not supported" because serverless collections
+      are eventually consistent and expose no manual refresh. Only `false`
+      (default) and `wait_for` remain valid.
+    update:
+      _common___Refresh:
+        x-distributions:
+          - amazon-serverless
+        x-aoss-constraint: >-
+          refresh=true is not supported on Amazon OpenSearch Serverless
+          (400 "true refresh policy is not supported"). AOSS is eventually
+          consistent; use the default (false) or wait_for.
+        oneOf:
+          - type: string
+            const: "false"
+            description: Do not refresh the affected shards (default on AOSS).
+          - type: string
+            const: "wait_for"
+            description: >-
+              Wait for the changes to become visible before replying. On AOSS
+              this waits for the eventual-consistency window to elapse.

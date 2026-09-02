@@ -1,16 +1,23 @@
 #!/usr/bin/env bash
 # Build distribution-specific OpenAPI specs from YAML + overlays.
 #
-# SINGLE SOURCE OF TRUTH: this repository.
-#   - Base OSS spec:      spec/opensearch-openapi.yaml
+# SINGLE SOURCE OF TRUTH: this repository (overlays + tools). The OSS BASE spec
+# is fetched fresh from the canonical upstream URL at build time so all three
+# distributions track the latest published OpenSearch API surface:
+#
+#   - Base OSS spec:      $OSS_SPEC_URL  (default: api-spec.opensearch.org),
+#                         cached to spec/opensearch-openapi.yaml as a fallback
 #   - Blocklist overlays:  overlays/amazon-managed.overlay.yaml, overlays/amazon-serverless.overlay.yaml
 #   - Extension overlays:  overlays/aoss-ultrawarm-api.overlay.yaml, overlays/aos-cold-api.overlay.yaml,
 #                          overlays/aoss-snapshot-api-extensions.overlay.yaml
+#   - Constraint overlays: overlays/aoss-refresh-constraint.overlay.yaml
 #   - Tools:               tools/inject-tags.py, tools/strip-deprecated.py
 #
-# All paths are repo-relative. No external/home-dir dependencies. No ad-hoc JSON edits.
+# All local paths are repo-relative. No home-dir dependencies. No ad-hoc JSON edits.
 #
 # Usage:  ./tools/build-distribution-specs.sh   (run from repo root or anywhere)
+#   OSS_SPEC_URL=<url>  override the upstream base spec URL
+#   OFFLINE=1           skip the fetch, use the cached spec/opensearch-openapi.yaml
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
@@ -19,12 +26,29 @@ OVERLAYS_DIR="$REPO_DIR/overlays"
 TOOLS_DIR="$REPO_DIR/tools"
 BUILD_DIR="$REPO_DIR/build"
 
-BASE_SPEC="$SPEC_DIR/opensearch-openapi.yaml"
+OSS_SPEC_URL="${OSS_SPEC_URL:-https://api-spec.opensearch.org/opensearch-openapi.yaml}"
+CACHED_SPEC="$SPEC_DIR/opensearch-openapi.yaml"
+BASE_SPEC="$BUILD_DIR/opensearch-openapi.yaml"
 
 mkdir -p "$BUILD_DIR"
 
 echo "=== Building distribution specs from YAML + overlays ==="
 echo "Repo:      $REPO_DIR"
+
+# --- Resolve the OSS base spec: fetch upstream, fall back to cached copy ---
+echo ""
+echo "--- Base spec ---"
+if [ "${OFFLINE:-0}" = "1" ]; then
+  echo "  OFFLINE=1: using cached $CACHED_SPEC"
+  cp "$CACHED_SPEC" "$BASE_SPEC"
+elif curl -fsSL "$OSS_SPEC_URL" -o "$BASE_SPEC"; then
+  echo "  Fetched upstream: $OSS_SPEC_URL ($(wc -c < "$BASE_SPEC") bytes)"
+  # Refresh the in-repo cache so an offline build stays reproducible.
+  cp "$BASE_SPEC" "$CACHED_SPEC"
+else
+  echo "  WARN: upstream fetch failed ($OSS_SPEC_URL); falling back to cached $CACHED_SPEC" >&2
+  cp "$CACHED_SPEC" "$BASE_SPEC"
+fi
 echo "Base spec: $BASE_SPEC"
 
 # --- OSS: base spec, no overlay ---
@@ -66,6 +90,12 @@ echo "  Step 2: Apply snapshot extension overlay"
 npx openapi-overlays-js \
   --openapi "$BUILD_DIR/opensearch-openapi-aoss.yaml" \
   --overlay "$OVERLAYS_DIR/aoss-snapshot-api-extensions.overlay.yaml" \
+  > "$BUILD_DIR/opensearch-openapi-aoss-snap.yaml"
+
+echo "  Step 3: Apply refresh-constraint overlay (refresh=true unsupported)"
+npx openapi-overlays-js \
+  --openapi "$BUILD_DIR/opensearch-openapi-aoss-snap.yaml" \
+  --overlay "$OVERLAYS_DIR/aoss-refresh-constraint.overlay.yaml" \
   > "$BUILD_DIR/opensearch-openapi-aoss-full.yaml"
 
 # --- Convert YAML -> JSON ---
