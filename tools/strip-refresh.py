@@ -55,10 +55,30 @@ def main() -> None:
     for k in refresh_keys:
         params.pop(k, None)
 
+    # 4. Remove the shared Refresh schema if nothing references it anymore.
+    #    The refresh params were the only $refs to _common___Refresh, so once
+    #    they are gone the schema is orphaned dead weight. Guard with a real
+    #    reference scan in case a future spec revision points something else at it.
+    removed_schema = False
+    schemas = spec.get("components", {}).get("schemas", {})
+    if "_common___Refresh" in schemas:
+        needle = '"#/components/schemas/_common___Refresh"'
+        # Serialize everything EXCEPT the schema's own definition and check for refs.
+        probe = dict(schemas)
+        probe.pop("_common___Refresh", None)
+        rest = dict(spec)
+        rest_components = dict(spec.get("components", {}))
+        rest_components["schemas"] = probe
+        rest["components"] = rest_components
+        if needle not in json.dumps(rest):
+            schemas.pop("_common___Refresh", None)
+            removed_schema = True
+
     with open(dst, "w") as f:
         json.dump(spec, f)
 
-    print(f"  Removed {len(refresh_keys)} refresh param defs, {removed_refs} operation $refs")
+    print(f"  Removed {len(refresh_keys)} refresh param defs, {removed_refs} operation $refs"
+          + (", 1 orphaned _common___Refresh schema" if removed_schema else ""))
     print(f"  Written: {dst}")
 
 
