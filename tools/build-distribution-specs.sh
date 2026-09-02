@@ -92,9 +92,20 @@ npx openapi-overlays-js \
   --overlay "$OVERLAYS_DIR/aoss-snapshot-api-extensions.overlay.yaml" \
   > "$BUILD_DIR/opensearch-openapi-aoss-snap.yaml"
 
-echo "  Step 3: Apply refresh-removal overlay (AOSS rejects all explicit refresh values)"
-npx openapi-overlays-js \
-  --openapi "$BUILD_DIR/opensearch-openapi-aoss-snap.yaml" \
+echo "  Step 3: Apply refresh-removal overlay via speakeasy (needs \$ref filter support)"
+# openapi-overlays-js CANNOT apply this overlay -- its JSONPath engine rejects
+# @.$ref filter predicates ("unsafe expression"). The speakeasy overlay CLI does
+# support them, so this one overlay is applied with speakeasy. Install:
+#   https://github.com/speakeasy-api/speakeasy (prebuilt binary; no Go needed)
+: "${SPEAKEASY:=speakeasy}"
+if ! command -v "$SPEAKEASY" >/dev/null 2>&1; then
+  echo "ERROR: '$SPEAKEASY' not found on PATH. The AOSS refresh-removal overlay needs" >&2
+  echo "       the speakeasy overlay CLI (\$ref filter support). Install it or set" >&2
+  echo "       SPEAKEASY=/path/to/speakeasy. See README." >&2
+  exit 3
+fi
+"$SPEAKEASY" overlay apply \
+  --schema "$BUILD_DIR/opensearch-openapi-aoss-snap.yaml" \
   --overlay "$OVERLAYS_DIR/aoss-refresh-remove.overlay.yaml" \
   > "$BUILD_DIR/opensearch-openapi-aoss-full.yaml"
 

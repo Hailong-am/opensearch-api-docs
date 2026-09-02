@@ -62,4 +62,6 @@ is served from `gh-pages`).
 ## Requirements
 
 - Node.js (for `npx openapi-overlays-js`)
+- speakeasy overlay CLI (for the AOSS refresh-removal overlay, which needs $ref filter support that openapi-overlays-js lacks): https://github.com/speakeasy-api/speakeasy -- prebuilt binary, no Go needed. Set SPEAKEASY=/path if not on PATH.
+
 - Python 3 with PyYAML (`pip install pyyaml`)
