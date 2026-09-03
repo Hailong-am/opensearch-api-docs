@@ -1,0 +1,92 @@
+name: Build and Publish Docs
+
+# Auto-publishes the rendered API docs to the gh-pages branch.
+# Triggers:
+#   - push to main touching the site source (index.html, spec/, overlays/, tools/, build script)
+#   - manual run (workflow_dispatch)
+#   - weekly schedule, so the OSS base spec (fetched from api-spec.opensearch.org
+#     at build time) stays fresh even without a source change.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'spec/**'
+      - 'overlays/**'
+      - 'tools/**'
+      - 'package.json'
+      - '.github/workflows/publish-docs.yml'
+  workflow_dispatch: {}
+  schedule:
+    - cron: '17 6 * * 1'  # Mondays 06:17 UTC
+
+# Only one publish at a time; a newer push supersedes an in-flight run.
+concurrency:
+  group: publish-docs
+  cancel-in-progress: true
+
+permissions:
+  contents: write  # required to push the built site to gh-pages
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4
+        with:
+          node-version: '20'
+
+      - name: Setup Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+
+      - name: Install build dependencies
+        run: |
+          npm ci || npm install --no-audit --no-fund
+          python3 -m pip install --quiet pyyaml
+
+      - name: Install speakeasy overlay CLI
+        env:
+          SPEAKEASY_VERSION: v1.796.3
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL \
+            "https://github.com/speakeasy-api/speakeasy/releases/download/${SPEAKEASY_VERSION}/speakeasy_linux_amd64.zip" \
+            -o /tmp/speakeasy.zip
+          unzip -o -q /tmp/speakeasy.zip -d "$HOME/.local/bin"
+          chmod +x "$HOME/.local/bin/speakeasy"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/speakeasy" --version
+
+      - name: Build distribution specs
+        run: npm run build
+
+      - name: Assemble site
+        run: |
+          rm -rf _site && mkdir -p _site/build
+          cp index.html _site/index.html
+          [ -f .nojekyll ] && cp .nojekyll _site/.nojekyll || touch _site/.nojekyll
+          cp build/opensearch-openapi-oss-tagged.json  _site/build/
+          cp build/opensearch-openapi-aos-tagged.json  _site/build/
+          cp build/opensearch-openapi-aoss-tagged.json _site/build/
+          # keep the -clean.json intermediates too (they are referenced/diffable)
+          cp build/opensearch-openapi-oss-clean.json  _site/build/ 2>/dev/null || true
+          cp build/opensearch-openapi-aos-clean.json  _site/build/ 2>/dev/null || true
+          cp build/opensearch-openapi-aoss-clean.json _site/build/ 2>/dev/null || true
+          echo "Assembled site:"; find _site -type f | sort
+
+      - name: Publish to gh-pages
+        uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e # v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./_site
+          force_orphan: true  # keep gh-pages a single clean commit (built output only)
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Publish docs from ${{ github.sha }}'
