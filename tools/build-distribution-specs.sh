@@ -71,16 +71,27 @@ npx openapi-overlays-js \
   --overlay "$OVERLAYS_DIR/aos-extensions.overlay.yaml" \
   > "$BUILD_DIR/opensearch-openapi-aos-full.yaml"
 
-# --- AOSS: remove overlay + snapshot extension ---
+# --- AOSS: allowlist overlay (generated) + snapshot extension + refresh strip ---
 echo ""
 echo "--- AOSS ---"
-echo "  Step 1: Apply remove overlay (blocklist)"
+echo "  Step 0: Regenerate allowlist overlay from the DP API allowlist + current base"
+# ALLOWLIST strategy: overlays/amazon-serverless-allowlist.overlay.yaml is a
+# GENERATED artifact -- every base (path) not covered by the customer-facing DP
+# API allowlist (spec/aoss-dp-api-allowlist.md, from parser V2 doc/APIs.md) is
+# removed. Regenerating here keeps the overlay in lockstep with the base fetched
+# above; CI enforces `regenerate && git diff --exit-code` (idempotency gate).
+python3 "$TOOLS_DIR/generate-aoss-allowlist.py" \
+  "$SPEC_DIR/aoss-dp-api-allowlist.md" \
+  "$BASE_SPEC" \
+  "$OVERLAYS_DIR/amazon-serverless-allowlist.overlay.yaml"
+
+echo "  Step 1: Apply allowlist overlay (remove everything not in the allowlist)"
 npx openapi-overlays-js \
   --openapi "$BASE_SPEC" \
-  --overlay "$OVERLAYS_DIR/amazon-serverless.overlay.yaml" \
+  --overlay "$OVERLAYS_DIR/amazon-serverless-allowlist.overlay.yaml" \
   > "$BUILD_DIR/opensearch-openapi-aoss.yaml"
 
-echo "  Step 2: Apply snapshot extension overlay"
+echo "  Step 2: Apply snapshot extension overlay (AOSS body fields on the kept snapshot paths)"
 npx openapi-overlays-js \
   --openapi "$BUILD_DIR/opensearch-openapi-aoss.yaml" \
   --overlay "$OVERLAYS_DIR/aoss-snapshot-api-extensions.overlay.yaml" \
@@ -101,17 +112,10 @@ fi
 "$SPEAKEASY" overlay apply \
   --schema "$BUILD_DIR/opensearch-openapi-aoss-snap.yaml" \
   --overlay "$OVERLAYS_DIR/aoss-refresh-remove.overlay.yaml" \
-  > "$BUILD_DIR/opensearch-openapi-aoss-refresh.yaml"
-
-echo "  Step 4: Apply empirical-behavior blocklist (non-functional write/scan ops)"
-# reindex / update_by_query / delete_by_query (+ rethrottles) are accepted by the
-# AOSS coordinator but perform no work (empty body, no side effect) -- verified
-# against a real collection. Removed so the doc reflects real behavior. scroll is
-# NOT removed (it returns a real _scroll_id). Path-level removes.
-"$SPEAKEASY" overlay apply \
-  --schema "$BUILD_DIR/opensearch-openapi-aoss-refresh.yaml" \
-  --overlay "$OVERLAYS_DIR/aoss-behavior-blocklist.overlay.yaml" \
   > "$BUILD_DIR/opensearch-openapi-aoss-full.yaml"
+# NOTE: the old empirical-behavior blocklist (reindex / update_by_query /
+# delete_by_query + rethrottles) is now REDUNDANT -- none of those paths are in
+# the allowlist, so Step 1 already removes them. Overlay retired.
 
 # --- Convert YAML -> JSON ---
 echo ""
