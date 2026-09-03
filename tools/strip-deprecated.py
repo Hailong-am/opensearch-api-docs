@@ -8,7 +8,7 @@ Preprocess OpenSearch OpenAPI spec:
 import json
 import sys
 
-def process_spec(spec):
+def process_spec(spec, inject_version=True):
     removed = 0
     empty_paths = []
     
@@ -28,14 +28,17 @@ def process_spec(spec):
             if not op.get('summary'):
                 op['summary'] = f"{method.upper()} {path}"
             
-            # Append version to description
-            version = op.get('x-version-added')
-            if version:
-                version_note = f"\n\n**Minimum version:** `{version}`"
-                if op.get('description'):
-                    op['description'] += version_note
-                else:
-                    op['description'] = f"**Minimum version:** `{version}`"
+            # Append version to description. Skipped for serverless (AOSS),
+            # which has no engine-version concept -- a "Minimum version" note
+            # there is meaningless and misleading.
+            if inject_version:
+                version = op.get('x-version-added')
+                if version:
+                    version_note = f"\n\n**Minimum version:** `{version}`"
+                    if op.get('description'):
+                        op['description'] += version_note
+                    else:
+                        op['description'] = f"**Minimum version:** `{version}`"
         
         # Remove empty paths
         remaining = [m for m in methods if m in ('get','post','put','delete','head','patch','options','trace')]
@@ -48,25 +51,27 @@ def process_spec(spec):
     return removed, len(empty_paths)
 
 if __name__ == '__main__':
-    if len(sys.argv) < 3:
-        print(f"Usage: {sys.argv[0]} <input.json> <output.json>")
+    args = [a for a in sys.argv[1:] if not a.startswith('--')]
+    inject_version = '--no-version' not in sys.argv
+    if len(args) < 2:
+        print(f"Usage: {sys.argv[0]} <input.json> <output.json> [--no-version]")
         sys.exit(1)
     
-    with open(sys.argv[1]) as f:
+    with open(args[0]) as f:
         spec = json.load(f)
     
     total_before = sum(1 for p in spec['paths'].values() for m, op in p.items() 
                        if isinstance(op, dict) and 'operationId' in op)
     
-    removed, empty = process_spec(spec)
+    removed, empty = process_spec(spec, inject_version=inject_version)
     
     total_after = sum(1 for p in spec['paths'].values() for m, op in p.items() 
                       if isinstance(op, dict) and 'operationId' in op)
     
-    with open(sys.argv[2], 'w') as f:
+    with open(args[1], 'w') as f:
         json.dump(spec, f)
     
     print(f"Before: {total_before} operations")
     print(f"Removed: {removed} deprecated ({empty} empty paths)")
-    print(f"After: {total_after} operations")
-    print(f"Written: {sys.argv[2]}")
+    print(f"After: {total_after} operations{' (version notes suppressed)' if not inject_version else ''}")
+    print(f"Written: {args[1]}")
