@@ -10,7 +10,7 @@ dependencies — clone it and everything needed to rebuild the specs is here.
 Live: https://hailong-am.github.io/opensearch-api-docs/
 - `?dist=oss`  — OpenSearch (OSS), 696 operations
 - `?dist=aos`  — Amazon OpenSearch Service, 683 operations (+ UltraWarm + Cold Tier)
-- `?dist=aoss` — Amazon OpenSearch Serverless, 605 operations (+ snapshot extensions)
+- `?dist=aoss` — Amazon OpenSearch Serverless, 176 operations (allowlist-generated from the customer-facing DP API surface + snapshot extensions)
 
 ## Layout
 
@@ -18,18 +18,23 @@ Live: https://hailong-am.github.io/opensearch-api-docs/
 index.html                 Scalar renderer; ?dist= selects the spec
 package.json               pins openapi-overlays-js
 spec/
-  opensearch-openapi.yaml  OSS base spec (hand-authored upstream, YAML)
+  opensearch-openapi.yaml  OSS base spec (cached upstream copy; fetched fresh at build time)
+  aoss-dp-api-allowlist.md  AOSS customer-facing DP API allowlist (SOURCE OF TRUTH for AOSS;
+                            from parser V2 doc/APIs.md). Drives the generated AOSS overlay.
 overlays/
-  amazon-managed.overlay.yaml              AOS blocklist (remove-only)
-  amazon-serverless.overlay.yaml           AOSS blocklist (remove-only)
-  aoss-ultrawarm-api.overlay.yaml          AOS UltraWarm additions
-  aos-cold-api.overlay.yaml                AOS Cold Tier additions
-  aoss-snapshot-api-extensions.overlay.yaml AOSS snapshot additions
+  amazon-managed.overlay.yaml               AOS blocklist (remove-only, hand-maintained)
+  amazon-serverless-allowlist.overlay.yaml  AOSS surface (GENERATED — do not hand-edit;
+                                            everything not in the allowlist is removed)
+  aos-extensions.overlay.yaml               AOS UltraWarm + Cold Tier additions
+  aoss-snapshot-api-extensions.overlay.yaml AOSS snapshot body-field additions
+  aoss-refresh-remove.overlay.yaml          (AOSS) strips the write-op refresh param
 tools/
   build-distribution-specs.sh  the build (all paths repo-relative)
+  generate-aoss-allowlist.py   regenerates the AOSS allowlist overlay from the allowlist md
+                               + current base; hard invariant: every allowlist row must match
+                               a base path. CI gates `regenerate && git diff --exit-code`.
   strip-deprecated.py          removes deprecated ops, injects "Minimum version"
   inject-tags.py               maps x-operation-group prefixes to Scalar sidebar groups
-  strip-refresh.py             (AOSS) removes the write-op refresh param (AOSS rejects all explicit values)
 build/                        generated output (git-tracked; the site loads *-tagged.json)
 ```
 

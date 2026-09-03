@@ -1,0 +1,59 @@
+name: Validate Generated Overlays
+
+# Codegen idempotency gate. The AOSS allowlist overlay
+# (overlays/amazon-serverless-allowlist.overlay.yaml) is GENERATED from
+# spec/aoss-dp-api-allowlist.md by tools/generate-aoss-allowlist.py. This job
+# regenerates it against the freshly-fetched OSS base and fails if the checked-in
+# overlay is stale (`regenerate && git diff --exit-code`), so a hand-edit of the
+# generated file, or a drift between the allowlist and the base, cannot ship.
+on:
+  pull_request:
+    paths:
+      - 'spec/aoss-dp-api-allowlist.md'
+      - 'overlays/amazon-serverless-allowlist.overlay.yaml'
+      - 'tools/generate-aoss-allowlist.py'
+      - 'tools/build-distribution-specs.sh'
+      - '.github/workflows/validate-overlays.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  regen-idempotent:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Setup Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+
+      - name: Install deps
+        run: python3 -m pip install --quiet pyyaml
+
+      - name: Fetch OSS base spec
+        run: |
+          mkdir -p build
+          curl -fsSL https://api-spec.opensearch.org/opensearch-openapi.yaml \
+            -o build/opensearch-openapi.yaml
+          echo "base bytes: $(wc -c < build/opensearch-openapi.yaml)"
+
+      - name: Regenerate allowlist overlay
+        run: |
+          python3 tools/generate-aoss-allowlist.py \
+            spec/aoss-dp-api-allowlist.md \
+            build/opensearch-openapi.yaml \
+            overlays/amazon-serverless-allowlist.overlay.yaml
+
+      - name: Fail if the generated overlay is stale
+        run: |
+          if ! git diff --exit-code -- overlays/amazon-serverless-allowlist.overlay.yaml; then
+            echo "::error::overlays/amazon-serverless-allowlist.overlay.yaml is out of date." >&2
+            echo "Run: python3 tools/generate-aoss-allowlist.py spec/aoss-dp-api-allowlist.md build/opensearch-openapi.yaml overlays/amazon-serverless-allowlist.overlay.yaml" >&2
+            echo "then commit the result. Do NOT hand-edit the generated overlay." >&2
+            exit 1
+          fi
+          echo "Generated overlay is in sync with the allowlist + base spec."
