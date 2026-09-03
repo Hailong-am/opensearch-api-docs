@@ -1,26 +1,37 @@
 overlay: 1.0.0
 info:
-  title: AOS UltraWarm migration API extensions
+  title: AOS-only API extensions (UltraWarm + Cold tier)
   version: 1.0.0
 extends: ./opensearch-openapi.yaml
 
-# Adds the AOS-proprietary UltraWarm (/_ultrawarm/migration/*) endpoints.
-# These paths do not exist in OSS OpenSearch at all -- absent from the allowlist
-# and confirmed absent from opensearch-cluster-spec-3.7-full.yaml (820 paths).
+# Adds the AOS-proprietary storage-tier migration endpoints. None of these paths
+# exist in OSS OpenSearch, and none are available on AOSS -- they are AOS
+# (amazon-managed) ONLY. Every operation, parameter, response, schema, and
+# requestBody added here is marked x-distributions: [amazon-managed].
 #
-# Source: SearchServicesESKraken repo (opensearch-3.7.0 branch)
-#   RestWarmMigrationAction      POST /_ultrawarm/migration/{index}/_warm
-#   RestHotMigrationAction       POST /_ultrawarm/migration/{index}/_hot
+# UltraWarm (/_ultrawarm/migration/*) -- SearchServicesESKraken (opensearch-3.7.0):
+#   RestWarmMigrationAction       POST /_ultrawarm/migration/{index}/_warm
+#   RestHotMigrationAction        POST /_ultrawarm/migration/{index}/_hot
 #   RestWarmToColdMigrationAction POST /_ultrawarm/migration/{index}/_cold
-#   RestCancelMigrationAction    POST /_ultrawarm/migration/_cancel/{index}
-#   RestGetMigrationAction       GET  /_ultrawarm/migration/{index}/_status
-#   RestListMigrationsAction     GET  /_ultrawarm/migration/_status
-#   RestUpdateMigrationAction    PUT  /_ultrawarm/migration/{index}
+#   RestCancelMigrationAction     POST /_ultrawarm/migration/_cancel/{index}
+#   RestGetMigrationAction        GET  /_ultrawarm/migration/{index}/_status
+#   RestListMigrationsAction      GET  /_ultrawarm/migration/_status
+#   RestUpdateMigrationAction     PUT  /_ultrawarm/migration/{index}
 #
-# All endpoints are AOS-only (x-distributions: [amazon-managed]).
-# 'amazon-managed' covers both AOS provisioned and AOSS (where applicable).
+# Cold tier (/_cold/*) -- AOS gap analysis (opensearch-aos-oss-gap.md):
+#   POST /_cold/migration/{index}/_cold    migrate index to cold tier
+#   POST /_cold/migration/{index}/_warm    migrate cold index back to warm
+#   POST /_cold/migration/_cancel/{index}  cancel cold migration
+#   GET  /_cold/migration/{index}/_status  cold migration status
+#   GET  /_cold/migration/_status          list all cold migrations
+#   POST /_cold/indices/_search            search cold indices
+#   GET  /_cold/_catalog                   cold tier catalog
 
 actions:
+
+  # =======================================================================
+  # UltraWarm (/_ultrawarm/migration/*)
+  # =======================================================================
 
   # -----------------------------------------------------------------------
   # PATH: POST /_ultrawarm/migration/{index}/_warm
@@ -229,11 +240,151 @@ actions:
             '200':
               $ref: '#/components/responses/ultrawarm.migrate___200'
 
+  # =======================================================================
+  # Cold tier (/_cold/*)
+  # =======================================================================
+
   # -----------------------------------------------------------------------
-  # COMPONENTS: parameters
+  # PATH: POST /_cold/migration/{index}/_cold
   # -----------------------------------------------------------------------
+  - target: "$.paths"
+    description: Add POST /_cold/migration/{index}/_cold (warm-to-cold migration)
+    update:
+      "/_cold/migration/{index}/_cold":
+        post:
+          operationId: cold.migrate_to_cold
+          x-operation-group: cold.migrate_to_cold
+          x-distributions:
+            - amazon-managed
+          x-version-added: '1.0'
+          description: AOS only. Migrates an index from warm storage to cold storage.
+          parameters:
+            - $ref: '#/components/parameters/cold.migrate_to_cold::path.index'
+          responses:
+            '200':
+              $ref: '#/components/responses/cold.migrate_to_cold@200'
+
+  # -----------------------------------------------------------------------
+  # PATH: POST /_cold/migration/{index}/_warm
+  # -----------------------------------------------------------------------
+  - target: "$.paths"
+    description: Add POST /_cold/migration/{index}/_warm (cold-to-warm migration)
+    update:
+      "/_cold/migration/{index}/_warm":
+        post:
+          operationId: cold.migrate_to_warm
+          x-operation-group: cold.migrate_to_warm
+          x-distributions:
+            - amazon-managed
+          x-version-added: '1.0'
+          description: AOS only. Migrates an index from cold storage back to warm storage.
+          parameters:
+            - $ref: '#/components/parameters/cold.migrate_to_warm::path.index'
+          responses:
+            '200':
+              $ref: '#/components/responses/cold.migrate_to_warm@200'
+
+  # -----------------------------------------------------------------------
+  # PATH: POST /_cold/migration/_cancel/{index}
+  # -----------------------------------------------------------------------
+  - target: "$.paths"
+    description: Add POST /_cold/migration/_cancel/{index} (cancel cold migration)
+    update:
+      "/_cold/migration/_cancel/{index}":
+        post:
+          operationId: cold.cancel_migration
+          x-operation-group: cold.cancel_migration
+          x-distributions:
+            - amazon-managed
+          x-version-added: '1.0'
+          description: AOS only. Cancels an ongoing cold tier migration for the specified index.
+          parameters:
+            - $ref: '#/components/parameters/cold.cancel_migration::path.index'
+          responses:
+            '200':
+              $ref: '#/components/responses/cold.cancel_migration@200'
+
+  # -----------------------------------------------------------------------
+  # PATH: GET /_cold/migration/{index}/_status
+  # -----------------------------------------------------------------------
+  - target: "$.paths"
+    description: Add GET /_cold/migration/{index}/_status (single-index cold migration status)
+    update:
+      "/_cold/migration/{index}/_status":
+        get:
+          operationId: cold.get_migration_status
+          x-operation-group: cold.get_migration_status
+          x-distributions:
+            - amazon-managed
+          x-version-added: '1.0'
+          description: AOS only. Returns the cold tier migration status for a specific index.
+          parameters:
+            - $ref: '#/components/parameters/cold.get_migration_status::path.index'
+          responses:
+            '200':
+              $ref: '#/components/responses/cold.get_migration_status@200'
+
+  # -----------------------------------------------------------------------
+  # PATH: GET /_cold/migration/_status
+  # -----------------------------------------------------------------------
+  - target: "$.paths"
+    description: Add GET /_cold/migration/_status (list all cold migrations)
+    update:
+      "/_cold/migration/_status":
+        get:
+          operationId: cold.list_migration_status
+          x-operation-group: cold.list_migration_status
+          x-distributions:
+            - amazon-managed
+          x-version-added: '1.0'
+          description: AOS only. Returns the cold tier migration status for all indices.
+          responses:
+            '200':
+              $ref: '#/components/responses/cold.list_migration_status@200'
+
+  # -----------------------------------------------------------------------
+  # PATH: POST /_cold/indices/_search
+  # -----------------------------------------------------------------------
+  - target: "$.paths"
+    description: Add POST /_cold/indices/_search (search cold indices)
+    update:
+      "/_cold/indices/_search":
+        post:
+          operationId: cold.search
+          x-operation-group: cold.search
+          x-distributions:
+            - amazon-managed
+          x-version-added: '1.0'
+          description: AOS only. Searches data stored in cold tier indices.
+          requestBody:
+            $ref: '#/components/requestBodies/search'
+          responses:
+            '200':
+              $ref: '#/components/responses/search@200'
+
+  # -----------------------------------------------------------------------
+  # PATH: GET /_cold/_catalog
+  # -----------------------------------------------------------------------
+  - target: "$.paths"
+    description: Add GET /_cold/_catalog (cold tier catalog)
+    update:
+      "/_cold/_catalog":
+        get:
+          operationId: cold.catalog
+          x-operation-group: cold.catalog
+          x-distributions:
+            - amazon-managed
+          x-version-added: '1.0'
+          description: AOS only. Returns the cold tier catalog listing all cold indices.
+          responses:
+            '200':
+              $ref: '#/components/responses/cold.catalog@200'
+
+  # =======================================================================
+  # COMPONENTS: parameters (UltraWarm + Cold)
+  # =======================================================================
   - target: "$.components.parameters"
-    description: Add shared UltraWarm path and query parameters
+    description: Add shared UltraWarm and Cold tier path/query parameters
     update:
       ultrawarm.migrate___path.index:
         name: index
@@ -257,11 +408,48 @@ actions:
         x-distributions:
           - amazon-managed
 
-  # -----------------------------------------------------------------------
-  # COMPONENTS: responses
-  # -----------------------------------------------------------------------
+      "cold.migrate_to_cold::path.index":
+        name: index
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Name of the index to migrate to cold storage.
+        x-distributions:
+          - amazon-managed
+      "cold.migrate_to_warm::path.index":
+        name: index
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Name of the cold index to migrate back to warm storage.
+        x-distributions:
+          - amazon-managed
+      "cold.cancel_migration::path.index":
+        name: index
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Name of the index whose cold migration to cancel.
+        x-distributions:
+          - amazon-managed
+      "cold.get_migration_status::path.index":
+        name: index
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Name of the index to check cold migration status for.
+        x-distributions:
+          - amazon-managed
+
+  # =======================================================================
+  # COMPONENTS: responses (UltraWarm + Cold)
+  # =======================================================================
   - target: "$.components.responses"
-    description: Add UltraWarm migration responses
+    description: Add UltraWarm and Cold tier migration responses
     update:
       ultrawarm.migrate___200:
         description: Migration request accepted.
@@ -292,9 +480,67 @@ actions:
               items:
                 $ref: '#/components/schemas/ultrawarm._common___MigrationStatusEntry'
 
-  # -----------------------------------------------------------------------
-  # COMPONENTS: schemas
-  # -----------------------------------------------------------------------
+      "cold.migrate_to_cold@200":
+        description: Cold migration initiated successfully.
+        content:
+          application/json:
+            schema:
+              type: object
+              x-distributions:
+                - amazon-managed
+              properties:
+                acknowledged:
+                  type: boolean
+      "cold.migrate_to_warm@200":
+        description: Warm migration from cold initiated successfully.
+        content:
+          application/json:
+            schema:
+              type: object
+              x-distributions:
+                - amazon-managed
+              properties:
+                acknowledged:
+                  type: boolean
+      "cold.cancel_migration@200":
+        description: Cold migration cancelled successfully.
+        content:
+          application/json:
+            schema:
+              type: object
+              x-distributions:
+                - amazon-managed
+              properties:
+                acknowledged:
+                  type: boolean
+      "cold.get_migration_status@200":
+        description: Cold migration status for the index.
+        content:
+          application/json:
+            schema:
+              type: object
+              x-distributions:
+                - amazon-managed
+      "cold.list_migration_status@200":
+        description: Cold migration status for all indices.
+        content:
+          application/json:
+            schema:
+              type: object
+              x-distributions:
+                - amazon-managed
+      "cold.catalog@200":
+        description: Cold tier catalog listing.
+        content:
+          application/json:
+            schema:
+              type: object
+              x-distributions:
+                - amazon-managed
+
+  # =======================================================================
+  # COMPONENTS: schemas (UltraWarm)
+  # =======================================================================
   - target: "$.components.schemas"
     description: Add UltraWarm migration schemas
     update:
@@ -376,9 +622,9 @@ actions:
             type: string
             description: Current migration state.
 
-  # -----------------------------------------------------------------------
-  # COMPONENTS: requestBodies
-  # -----------------------------------------------------------------------
+  # =======================================================================
+  # COMPONENTS: requestBodies (UltraWarm)
+  # =======================================================================
   - target: "$.components.requestBodies"
     description: Add UltraWarm update migration request body
     update:

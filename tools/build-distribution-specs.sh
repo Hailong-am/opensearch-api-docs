@@ -8,7 +8,7 @@
 #   - Base OSS spec:      $OSS_SPEC_URL  (default: api-spec.opensearch.org),
 #                         cached to spec/opensearch-openapi.yaml as a fallback
 #   - Blocklist overlays:  overlays/amazon-managed.overlay.yaml, overlays/amazon-serverless.overlay.yaml
-#   - Extension overlays:  overlays/aoss-ultrawarm-api.overlay.yaml, overlays/aos-cold-api.overlay.yaml,
+#   - Extension overlays:  overlays/aos-extensions.overlay.yaml (UltraWarm + Cold, AOS-only),
 #                          overlays/aoss-snapshot-api-extensions.overlay.yaml
 #   - Constraint overlays: overlays/aoss-refresh-constraint.overlay.yaml
 #   - Tools:               tools/inject-tags.py, tools/strip-deprecated.py
@@ -56,7 +56,7 @@ echo ""
 echo "--- OSS ---"
 cp "$BASE_SPEC" "$BUILD_DIR/opensearch-openapi-oss.yaml"
 
-# --- AOS: remove overlay + UltraWarm extension + Cold tier extension ---
+# --- AOS: remove overlay + AOS-only extensions (UltraWarm + Cold tier) ---
 echo ""
 echo "--- AOS ---"
 echo "  Step 1: Apply remove overlay (blocklist)"
@@ -65,16 +65,10 @@ npx openapi-overlays-js \
   --overlay "$OVERLAYS_DIR/amazon-managed.overlay.yaml" \
   > "$BUILD_DIR/opensearch-openapi-aos.yaml"
 
-echo "  Step 2: Apply UltraWarm extension overlay"
+echo "  Step 2: Apply AOS-only extensions overlay (UltraWarm + Cold tier)"
 npx openapi-overlays-js \
   --openapi "$BUILD_DIR/opensearch-openapi-aos.yaml" \
-  --overlay "$OVERLAYS_DIR/aoss-ultrawarm-api.overlay.yaml" \
-  > "$BUILD_DIR/opensearch-openapi-aos-warm.yaml"
-
-echo "  Step 3: Apply Cold tier extension overlay"
-npx openapi-overlays-js \
-  --openapi "$BUILD_DIR/opensearch-openapi-aos-warm.yaml" \
-  --overlay "$OVERLAYS_DIR/aos-cold-api.overlay.yaml" \
+  --overlay "$OVERLAYS_DIR/aos-extensions.overlay.yaml" \
   > "$BUILD_DIR/opensearch-openapi-aos-full.yaml"
 
 # --- AOSS: remove overlay + snapshot extension ---
