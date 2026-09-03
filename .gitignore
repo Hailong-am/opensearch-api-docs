@@ -18,3 +18,5 @@ build/opensearch-openapi-aos-full.json
 build/opensearch-openapi-aoss.json
 build/opensearch-openapi-aoss-full.json
 build/opensearch-openapi-aoss-snap.yaml
+build/opensearch-openapi-aoss-refresh.yaml
+bin/
