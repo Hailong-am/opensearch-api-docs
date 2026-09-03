@@ -163,9 +163,9 @@
       const dist = params.get('dist') || 'oss';
 
       const configs = {
-        oss:  { label: 'OpenSearch (OSS)', badge: 'oss', spec: 'build/opensearch-openapi-oss-tagged.json', stats: '696 operations' },
-        aos:  { label: 'Amazon OpenSearch Service', badge: 'aos', spec: 'build/opensearch-openapi-aos-tagged.json', stats: '683 operations (includes UltraWarm + Cold Tier)' },
-        aoss: { label: 'Amazon OpenSearch Serverless', badge: 'aoss', spec: 'build/opensearch-openapi-aoss-tagged.json', stats: '599 operations (includes snapshot extensions)' },
+        oss:  { label: 'OpenSearch (OSS)', badge: 'oss', spec: 'build/opensearch-openapi-oss-tagged.json' },
+        aos:  { label: 'Amazon OpenSearch Service', badge: 'aos', spec: 'build/opensearch-openapi-aos-tagged.json' },
+        aoss: { label: 'Amazon OpenSearch Serverless', badge: 'aoss', spec: 'build/opensearch-openapi-aoss-tagged.json' },
       };
       const cfg = configs[dist] || configs.oss;
       document.title = `OpenSearch API — ${cfg.label}`;
@@ -178,7 +178,6 @@
           <line x1="70" y1="70" x2="92" y2="92" stroke="#ef6c00" stroke-width="10" stroke-linecap="round"/>
         </svg>
         <span class="title">OpenSearch API Reference</span>
-        <span class="stats">${cfg.stats}</span>
         <div class="switcher-group">
           <span class="switcher-label">Distribution:</span>
           <select onchange="window.location.href='index.html?dist='+this.value">
