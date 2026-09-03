@@ -12,6 +12,14 @@ def process_spec(spec, inject_version=True):
     removed = 0
     empty_paths = []
 
+    # Drop the upstream spec version (info.version, e.g. "0.3.0"): it is the
+    # opensearch-api-specification repo's own version and is meaningless for a
+    # distribution reference doc. Scalar renders it as a "v0.3.0" badge; without
+    # it the badge disappears.
+    info = spec.get('info')
+    if isinstance(info, dict):
+        info.pop('version', None)
+
     # Build the set of shared component parameters that are marked deprecated,
     # so we can drop operation-level $refs that point at them. master_timeout
     # (superseded by cluster_manager_timeout), legacy local flags, etc. live
