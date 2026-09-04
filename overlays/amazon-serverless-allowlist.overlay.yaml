@@ -117,6 +117,8 @@ actions:
   remove: true
 - target: $.paths['/_data_stream']
   remove: true
+- target: $.paths['/_data_stream/_modify']
+  remove: true
 - target: $.paths['/_data_stream/_stats']
   remove: true
 - target: $.paths['/_data_stream/{name}']

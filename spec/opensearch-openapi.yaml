@@ -2222,6 +2222,29 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/indices.get_data_stream___200'
+  /_data_stream/_modify:
+    post:
+      operationId: indices.modify_data_stream.0
+      x-operation-group: indices.modify_data_stream
+      x-version-added: '3.8'
+      description: |-
+        Adds or removes backing indexes of a data stream with metadata-only actions.
+        This is an experimental API.
+      externalDocs:
+        url: https://docs.opensearch.org/latest/im-plugin/data-streams/
+      parameters:
+        - $ref: '#/components/parameters/indices.modify_data_stream___query.cluster_manager_timeout'
+        - $ref: '#/components/parameters/indices.modify_data_stream___query.timeout'
+        - $ref: '#/components/parameters/_global___query.pretty'
+        - $ref: '#/components/parameters/_global___query.human'
+        - $ref: '#/components/parameters/_global___query.error_trace'
+        - $ref: '#/components/parameters/_global___query.source'
+        - $ref: '#/components/parameters/_global___query.filter_path'
+      requestBody:
+        $ref: '#/components/requestBodies/indices.modify_data_stream'
+      responses:
+        '200':
+          $ref: '#/components/responses/indices.modify_data_stream___200'
   /_data_stream/_stats:
     get:
       operationId: indices.data_streams_stats.0
@@ -12580,6 +12603,23 @@ paths:
         '200':
           $ref: '#/components/responses/tasks.cancel___200'
   /_tasks/{task_id}:
+    delete:
+      operationId: tasks.delete.0
+      x-operation-group: tasks.delete
+      x-version-added: '3.9'
+      description: Deletes a stored completed task result.
+      externalDocs:
+        url: https://docs.opensearch.org/latest/api-reference/tasks/delete-task/
+      parameters:
+        - $ref: '#/components/parameters/tasks.delete___path.task_id'
+        - $ref: '#/components/parameters/_global___query.pretty'
+        - $ref: '#/components/parameters/_global___query.human'
+        - $ref: '#/components/parameters/_global___query.error_trace'
+        - $ref: '#/components/parameters/_global___query.source'
+        - $ref: '#/components/parameters/_global___query.filter_path'
+      responses:
+        '200':
+          $ref: '#/components/responses/tasks.delete___200'
     get:
       operationId: tasks.get.0
       x-operation-group: tasks.get
@@ -23885,6 +23925,20 @@ components:
       style: form
       x-version-deprecated: '2.0'
       x-deprecation-message: To promote inclusive language, use `cluster_manager_timeout` instead.
+    indices.modify_data_stream___query.cluster_manager_timeout:
+      name: cluster_manager_timeout
+      in: query
+      description: Operation timeout for connection to cluster-manager node.
+      schema:
+        $ref: '#/components/schemas/_common___Duration'
+    indices.modify_data_stream___query.timeout:
+      name: timeout
+      in: query
+      description: |-
+        Period to wait for a response.
+        If no response is received before the timeout expires, the request fails and returns an error.
+      schema:
+        $ref: '#/components/schemas/_common___Duration'
     indices.open___path.index:
       in: path
       name: index
@@ -30222,6 +30276,14 @@ components:
         type: boolean
         default: false
       style: form
+    tasks.delete___path.task_id:
+      in: path
+      name: task_id
+      description: The ID of the stored completed task result to delete (`node_id:task_number`).
+      required: true
+      schema:
+        $ref: '#/components/schemas/_common___TaskId'
+      style: simple
     tasks.get___path.task_id:
       in: path
       name: task_id
@@ -31301,6 +31363,22 @@ components:
           schema:
             type: object
             description: The data stream definition
+    indices.modify_data_stream:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              actions:
+                description: The actions to perform on the data stream.
+                type: array
+                items:
+                  $ref: '#/components/schemas/indices.modify_data_stream___Action'
+                minItems: 1
+            required:
+              - actions
+            description: The data stream modify actions.
+      required: true
     indices.put_alias:
       content:
         application/json:
@@ -33476,6 +33554,14 @@ components:
           schema:
             type: object
             properties:
+              attach_to_data_stream:
+                x-version-added: '3.8'
+                type: boolean
+                default: false
+                description: |-
+                  Whether to attach restored backing indexes to a pre-existing data stream of the same name.
+                  When `true`, a restored backing index (`.ds-<stream>-NNNNNN`) is attached to an existing data stream with a matching name during the restore.
+                  This is an experimental feature.
               ignore_index_settings:
                 description: A comma-delimited list of index settings to ignore when restoring indexes from a snapshot.
                 type: array
@@ -35210,6 +35296,12 @@ components:
             type: object
             additionalProperties:
               $ref: '#/components/schemas/indices._common___IndexState'
+      description: ''
+    indices.modify_data_stream___200:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/_common___AcknowledgedResponseBase'
       description: ''
     indices.open___200:
       content:
@@ -38640,6 +38732,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/tasks._common___TaskListResponseBase'
+      description: ''
+    tasks.delete___200:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/_common___AcknowledgedResponseBase'
       description: ''
     tasks.get___200:
       content:
@@ -59687,6 +59785,38 @@ components:
           $ref: '#/components/schemas/_common.mapping___TypeMapping'
       required:
         - mappings
+    indices.modify_data_stream___Action:
+      description: The action to perform on the backing indexes of a data stream.
+      type: object
+      properties:
+        add_backing_index:
+          $ref: '#/components/schemas/indices.modify_data_stream___AddBackingIndexAction'
+        remove_backing_index:
+          $ref: '#/components/schemas/indices.modify_data_stream___RemoveBackingIndexAction'
+      minProperties: 1
+      maxProperties: 1
+    indices.modify_data_stream___AddBackingIndexAction:
+      description: The configuration for adding a backing index to a data stream.
+      type: object
+      properties:
+        data_stream:
+          $ref: '#/components/schemas/_common___DataStreamName'
+        index:
+          $ref: '#/components/schemas/_common___IndexName'
+      required:
+        - data_stream
+        - index
+    indices.modify_data_stream___RemoveBackingIndexAction:
+      description: The configuration for removing a backing index from a data stream.
+      type: object
+      properties:
+        data_stream:
+          $ref: '#/components/schemas/_common___DataStreamName'
+        index:
+          $ref: '#/components/schemas/_common___IndexName'
+      required:
+        - data_stream
+        - index
     indices.put_index_template___IndexTemplateMapping:
       type: object
       properties:
