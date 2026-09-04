@@ -16,7 +16,7 @@ Live: https://hailong-am.github.io/opensearch-api-docs/
 
 ```
 index.html                 Scalar renderer; ?dist= selects the spec
-package.json               pins openapi-overlays-js
+package.json               build script entry (no npm overlay dep; overlays use speakeasy)
 spec/
   opensearch-openapi.yaml  OSS base spec (cached upstream copy; fetched fresh at build time)
   aoss-dp-api-allowlist.md  AOSS customer-facing DP API allowlist (SOURCE OF TRUTH for AOSS;
@@ -27,7 +27,16 @@ overlays/
                                             everything not in the allowlist is removed)
   aos-extensions.overlay.yaml               AOS UltraWarm + Cold Tier additions
   aoss-snapshot-api-extensions.overlay.yaml AOSS snapshot body-field additions
-  aoss-refresh-remove.overlay.yaml          (AOSS) strips the write-op refresh param
+  aoss-unsettable-index-settings-remove.overlay.yaml
+                                            (AOSS) removes number_of_shards / number_of_replicas
+                                            from IndexSettings — the only two index settings with
+                                            NO per-account dynamic-config override (the collection
+                                            owns topology). Account-conditional settings
+                                            (refresh_interval, warm.after, kNN opts, timestamp_field)
+                                            are deliberately LEFT IN — a per-account override can
+                                            enable them, so a static removal would be wrong.
+  aoss-refresh-remove.overlay.yaml          (AOSS) strips the write-op refresh param — rejected
+                                            for EVERY account (400), no override exists
 tools/
   build-distribution-specs.sh  the build (all paths repo-relative)
   generate-aoss-allowlist.py   regenerates the AOSS allowlist overlay from the allowlist md
@@ -41,15 +50,21 @@ build/                        generated output (git-tracked; the site loads *-ta
 ## Build
 
 ```bash
-npm install                       # installs pinned openapi-overlays-js
 npm run build                     # == ./tools/build-distribution-specs.sh
 ```
+
+All overlays are applied with the **speakeasy overlay CLI** (a single tool for
+the whole pipeline). speakeasy supports `$ref` filter predicates, which the
+previously-used `openapi-overlays-js` rejected; standardizing on it removes the
+split-tool complexity and the npm dependency. Install the prebuilt binary (no
+Go needed): https://github.com/speakeasy-api/speakeasy — set
+`SPEAKEASY=/path/to/speakeasy` if it is not on `PATH`.
 
 Pipeline per distribution:
 
 ```
 spec/opensearch-openapi.yaml
-  ──apply blocklist + extension overlays (openapi-overlays-js)──▶  *-full.yaml
+  ──apply blocklist / allowlist + extension overlays (speakeasy)──▶  *-full.yaml
   ──YAML→JSON──▶  *.json
   ──strip-deprecated.py──▶  *-clean.json
   ──inject-tags.py──▶  *-tagged.json   ◀── index.html loads this
@@ -66,7 +81,5 @@ is served from `gh-pages`).
 
 ## Requirements
 
-- Node.js (for `npx openapi-overlays-js`)
-- speakeasy overlay CLI (for the AOSS refresh-removal overlay, which needs $ref filter support that openapi-overlays-js lacks): https://github.com/speakeasy-api/speakeasy -- prebuilt binary, no Go needed. Set SPEAKEASY=/path if not on PATH.
-
+- speakeasy overlay CLI — applies ALL overlays (needs `$ref` filter support): https://github.com/speakeasy-api/speakeasy — prebuilt binary, no Go needed. Set `SPEAKEASY=/path` if not on `PATH`.
 - Python 3 with PyYAML (`pip install pyyaml`)
