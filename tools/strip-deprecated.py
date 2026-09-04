@@ -8,7 +8,7 @@ Preprocess OpenSearch OpenAPI spec:
 import json
 import sys
 
-def process_spec(spec, inject_version=True):
+def process_spec(spec, inject_version=True, title=None):
     removed = 0
     empty_paths = []
 
@@ -19,12 +19,12 @@ def process_spec(spec, inject_version=True):
     info = spec.get('info')
     if isinstance(info, dict):
         info.pop('version', None)
-        # For the serverless (AOSS) reference doc, retitle the document header
-        # from the generic upstream "OpenSearch API Specification" to
-        # "AOSS API Specification" so the rendered header names the distribution.
-        # Gated on the same --no-version flag that marks the AOSS build.
-        if not inject_version:
-            info['title'] = 'AOSS API Specification'
+        # Retitle the document header from the generic upstream
+        # "OpenSearch API Specification" to a distribution-specific title
+        # (e.g. "AOS API Specification" / "AOSS API Specification") when the
+        # caller passes one, so the rendered header names the distribution.
+        if title:
+            info['title'] = title
 
     # Build the set of shared component parameters that are marked deprecated,
     # so we can drop operation-level $refs that point at them. master_timeout
@@ -96,8 +96,13 @@ def process_spec(spec, inject_version=True):
 if __name__ == '__main__':
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
     inject_version = '--no-version' not in sys.argv
+    # Optional distribution-specific document title: --title="AOS API Specification"
+    title = None
+    for a in sys.argv[1:]:
+        if a.startswith('--title='):
+            title = a.split('=', 1)[1]
     if len(args) < 2:
-        print(f"Usage: {sys.argv[0]} <input.json> <output.json> [--no-version]")
+        print(f"Usage: {sys.argv[0]} <input.json> <output.json> [--no-version] [--title=TEXT]")
         sys.exit(1)
     
     with open(args[0]) as f:
@@ -106,7 +111,7 @@ if __name__ == '__main__':
     total_before = sum(1 for p in spec['paths'].values() for m, op in p.items() 
                        if isinstance(op, dict) and 'operationId' in op)
     
-    removed, empty, removed_params = process_spec(spec, inject_version=inject_version)
+    removed, empty, removed_params = process_spec(spec, inject_version=inject_version, title=title)
     
     total_after = sum(1 for p in spec['paths'].values() for m, op in p.items() 
                       if isinstance(op, dict) and 'operationId' in op)
