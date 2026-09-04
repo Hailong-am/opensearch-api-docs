@@ -19,6 +19,12 @@ def process_spec(spec, inject_version=True):
     info = spec.get('info')
     if isinstance(info, dict):
         info.pop('version', None)
+        # For the serverless (AOSS) reference doc, retitle the document header
+        # from the generic upstream "OpenSearch API Specification" to
+        # "AOSS API Specification" so the rendered header names the distribution.
+        # Gated on the same --no-version flag that marks the AOSS build.
+        if not inject_version:
+            info['title'] = 'AOSS API Specification'
 
     # Build the set of shared component parameters that are marked deprecated,
     # so we can drop operation-level $refs that point at them. master_timeout
