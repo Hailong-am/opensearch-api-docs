@@ -5,8 +5,5 @@
   "description": "Distribution-specific OpenSearch API reference (OSS / AOS / AOSS) rendered with Scalar. Single source of truth for the OSS spec, distribution overlays, and build tools.",
   "scripts": {
     "build": "./tools/build-distribution-specs.sh"
-  },
-  "dependencies": {
-    "openapi-overlays-js": "0.2.0"
   }
 }
