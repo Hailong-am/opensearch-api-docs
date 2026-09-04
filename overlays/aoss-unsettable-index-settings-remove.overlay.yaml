@@ -1,0 +1,27 @@
+# AOSS structurally-unsettable index settings removal.
+#
+# On Amazon OpenSearch Serverless the collection owns shard/replica topology.
+# `index.number_of_shards` and `index.number_of_replicas` are NOT in the
+# create-index allowlist (SERVERLESS_EXTERNAL_SETTINGS in the Juno indexing
+# coordinator) and -- unlike most other AOSS gates -- have NO per-account
+# dynamic-config escape hatch (AWSSearchServicesJunoDynamicConfig juno-md-*
+# CSVs). No account can ever set them, so they are removed from the AOSS
+# IndexSettings schema.
+#
+# CONTRAST: settings that ARE account-conditional (refresh_interval,
+# index.warm.after, custom doc id, kNN engine options, timestamp_field) are
+# deliberately LEFT IN the AOSS schema -- a per-account override can enable
+# them, so documenting them as absent would be wrong. Only the two
+# structurally-impossible topology settings are stripped here.
+#
+# Simple property-key removes -- applied with the speakeasy overlay CLI (the
+# single tool the whole pipeline is standardized on).
+overlay: 1.0.0
+info:
+  title: AOSS structurally-unsettable index settings removal
+  version: 1.0.0
+actions:
+  - target: "$.components.schemas['indices._common___IndexSettings'].properties.number_of_shards"
+    remove: true
+  - target: "$.components.schemas['indices._common___IndexSettings'].properties.number_of_replicas"
+    remove: true

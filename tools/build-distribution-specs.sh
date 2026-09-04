@@ -56,22 +56,34 @@ echo ""
 echo "--- OSS ---"
 cp "$BASE_SPEC" "$BUILD_DIR/opensearch-openapi-oss.yaml"
 
+# All overlays are applied with the speakeasy overlay CLI (single tool). It
+# supports $ref filter predicates (which openapi-overlays-js rejected), so the
+# whole pipeline is standardized on it. Install:
+#   https://github.com/speakeasy-api/speakeasy (prebuilt binary; no Go needed)
+: "${SPEAKEASY:=speakeasy}"
+if ! command -v "$SPEAKEASY" >/dev/null 2>&1; then
+  echo "ERROR: '$SPEAKEASY' not found on PATH. Overlays are applied with the" >&2
+  echo "       speakeasy overlay CLI. Install it or set SPEAKEASY=/path/to/speakeasy." >&2
+  echo "       See README." >&2
+  exit 3
+fi
+
 # --- AOS: remove overlay + AOS-only extensions (UltraWarm + Cold tier) ---
 echo ""
 echo "--- AOS ---"
 echo "  Step 1: Apply remove overlay (blocklist)"
-npx openapi-overlays-js \
-  --openapi "$BASE_SPEC" \
+"$SPEAKEASY" overlay apply \
+  --schema "$BASE_SPEC" \
   --overlay "$OVERLAYS_DIR/amazon-managed.overlay.yaml" \
   > "$BUILD_DIR/opensearch-openapi-aos.yaml"
 
 echo "  Step 2: Apply AOS-only extensions overlay (UltraWarm + Cold tier)"
-npx openapi-overlays-js \
-  --openapi "$BUILD_DIR/opensearch-openapi-aos.yaml" \
+"$SPEAKEASY" overlay apply \
+  --schema "$BUILD_DIR/opensearch-openapi-aos.yaml" \
   --overlay "$OVERLAYS_DIR/aos-extensions.overlay.yaml" \
   > "$BUILD_DIR/opensearch-openapi-aos-full.yaml"
 
-# --- AOSS: allowlist overlay (generated) + snapshot extension + refresh strip ---
+# --- AOSS: allowlist overlay (generated) + snapshot extension + unsettable + refresh strip ---
 echo ""
 echo "--- AOSS ---"
 echo "  Step 0: Regenerate allowlist overlay from the DP API allowlist + current base"
@@ -86,31 +98,34 @@ python3 "$TOOLS_DIR/generate-aoss-allowlist.py" \
   "$OVERLAYS_DIR/amazon-serverless-allowlist.overlay.yaml"
 
 echo "  Step 1: Apply allowlist overlay (remove everything not in the allowlist)"
-npx openapi-overlays-js \
-  --openapi "$BASE_SPEC" \
+"$SPEAKEASY" overlay apply \
+  --schema "$BASE_SPEC" \
   --overlay "$OVERLAYS_DIR/amazon-serverless-allowlist.overlay.yaml" \
   > "$BUILD_DIR/opensearch-openapi-aoss.yaml"
 
 echo "  Step 2: Apply snapshot extension overlay (AOSS body fields on the kept snapshot paths)"
-npx openapi-overlays-js \
-  --openapi "$BUILD_DIR/opensearch-openapi-aoss.yaml" \
+"$SPEAKEASY" overlay apply \
+  --schema "$BUILD_DIR/opensearch-openapi-aoss.yaml" \
   --overlay "$OVERLAYS_DIR/aoss-snapshot-api-extensions.overlay.yaml" \
   > "$BUILD_DIR/opensearch-openapi-aoss-snap.yaml"
 
-echo "  Step 3: Apply refresh-removal overlay via speakeasy (needs \$ref filter support)"
-# openapi-overlays-js CANNOT apply this overlay -- its JSONPath engine rejects
-# @.$ref filter predicates ("unsafe expression"). The speakeasy overlay CLI does
-# support them, so this one overlay is applied with speakeasy. Install:
-#   https://github.com/speakeasy-api/speakeasy (prebuilt binary; no Go needed)
-: "${SPEAKEASY:=speakeasy}"
-if ! command -v "$SPEAKEASY" >/dev/null 2>&1; then
-  echo "ERROR: '$SPEAKEASY' not found on PATH. The AOSS refresh-removal overlay needs" >&2
-  echo "       the speakeasy overlay CLI (\$ref filter support). Install it or set" >&2
-  echo "       SPEAKEASY=/path/to/speakeasy. See README." >&2
-  exit 3
-fi
+echo "  Step 3: Remove structurally-unsettable index settings (number_of_shards / number_of_replicas)"
+# These two have NO per-account dynamic-config escape hatch -- no account can
+# ever set them (the collection owns shard/replica topology), so they are the
+# only index SETTINGS removed from the AOSS schema. Account-conditional settings
+# (refresh_interval, warm.after, kNN opts, timestamp_field) are left in
+# deliberately -- a per-account override can enable them.
 "$SPEAKEASY" overlay apply \
   --schema "$BUILD_DIR/opensearch-openapi-aoss-snap.yaml" \
+  --overlay "$OVERLAYS_DIR/aoss-unsettable-index-settings-remove.overlay.yaml" \
+  > "$BUILD_DIR/opensearch-openapi-aoss-unsettable.yaml"
+
+echo "  Step 4: Apply refresh-removal overlay"
+# `refresh` is rejected for EVERY account (no dynamic-config override exists), so
+# like shards/replicas it is genuinely non-settable and removed from the AOSS
+# surface. Uses $ref filter predicates -> speakeasy (already the pipeline tool).
+"$SPEAKEASY" overlay apply \
+  --schema "$BUILD_DIR/opensearch-openapi-aoss-unsettable.yaml" \
   --overlay "$OVERLAYS_DIR/aoss-refresh-remove.overlay.yaml" \
   > "$BUILD_DIR/opensearch-openapi-aoss-full.yaml"
 # NOTE: the old empirical-behavior blocklist (reindex / update_by_query /
