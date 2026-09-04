@@ -80,6 +80,46 @@
         --scalar-color-red: #ef5350;
       }
 
+      /* ============================================================
+         AWS Documentation style — applied ONLY when body.aws-style
+         is set (dist = aos | aoss). OSS keeps the OpenSearch theme
+         above. Palette: Squid Ink #232F3E nav, AWS Orange #FF9900 /
+         #EC7211 accents, Amazon Ember typography, 2px sharp corners.
+         Scoped selectors override the OpenSearch defaults on cascade.
+         ============================================================ */
+      body.aws-style .light-mode {
+        --scalar-color-1: #16191f;
+        --scalar-color-2: #545b64;
+        --scalar-color-3: #879596;
+        --scalar-color-accent: #EC7211;
+        --scalar-background-1: #ffffff;
+        --scalar-background-2: #fafafa;
+        --scalar-background-3: #f2f3f3;
+        --scalar-background-accent: rgba(236, 114, 17, 0.08);
+        --scalar-border-color: #d5dbdb;
+        --scalar-radius: 2px;
+        --scalar-radius-lg: 2px;
+        --scalar-font: "Amazon Ember", "Helvetica Neue", Helvetica, Arial, sans-serif;
+        /* HTTP method badge colors — AWS palette */
+        --scalar-color-green: #1d8102;
+        --scalar-color-blue: #0073bb;
+        --scalar-color-orange: #EC7211;
+        --scalar-color-red: #d13212;
+      }
+      body.aws-style .light-mode .sidebar {
+        --scalar-sidebar-background-1: #232F3E;
+        --scalar-sidebar-item-hover-color: #ffffff;
+        --scalar-sidebar-item-hover-background: rgba(255,255,255,0.08);
+        --scalar-sidebar-item-active-background: #FF9900;
+        --scalar-sidebar-color-active: #232F3E;
+        --scalar-sidebar-border-color: rgba(255,255,255,0.08);
+        --scalar-sidebar-color-1: rgba(255,255,255,0.92);
+        --scalar-sidebar-color-2: rgba(255,255,255,0.65);
+        --scalar-sidebar-search-background: rgba(255,255,255,0.08);
+        --scalar-sidebar-search-border-color: rgba(255,255,255,0.15);
+        --scalar-sidebar-search-color: rgba(255,255,255,0.6);
+      }
+
       /* Distribution banner */
       .os-dist-banner {
         background: #003b5c;
@@ -126,6 +166,18 @@
       .os-dist-banner select option {
         background: #003b5c; color: #fff;
       }
+
+      /* AWS-style banner overrides (dist = aos | aoss) */
+      body.aws-style .os-dist-banner {
+        background: #232F3E;
+        border-bottom: 3px solid #FF9900;
+        font-family: "Amazon Ember", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      }
+      body.aws-style .os-dist-banner select:focus { border-color: #FF9900; }
+      body.aws-style .os-dist-banner select option { background: #232F3E; }
+      body.aws-style .back-to-top { background: #232F3E; }
+      body.aws-style .back-to-top:hover { background: #EC7211; }
+
       /* Back to top button */
       .back-to-top {
         position: fixed;
@@ -178,14 +230,12 @@
       const cfg = configs[dist] || configs.oss;
       document.title = `OpenSearch API — ${cfg.label}`;
 
-      // Render banner
-      document.getElementById('dist-banner').innerHTML = `
-        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="45" cy="45" r="35" fill="none" stroke="#0a7b8f" stroke-width="8"/>
-          <circle cx="45" cy="45" r="14" fill="#0a7b8f"/>
-          <line x1="70" y1="70" x2="92" y2="92" stroke="#ef6c00" stroke-width="10" stroke-linecap="round"/>
-        </svg>
-        <span class="title">OpenSearch API Reference</span>
+      // AWS-style chrome for the Amazon distributions (aos, aoss);
+      // OSS keeps the OpenSearch theme.
+      const isAws = dist === 'aos' || dist === 'aoss';
+      if (isAws) document.body.classList.add('aws-style');
+
+      const switcherHtml = `
         <div class="switcher-group">
           <span class="switcher-label">Distribution:</span>
           <select onchange="window.location.href='index.html?dist='+this.value">
@@ -193,8 +243,28 @@
             <option value="aos" ${dist === 'aos' ? 'selected' : ''}>Amazon OpenSearch Service</option>
             <option value="aoss" ${dist === 'aoss' ? 'selected' : ''}>Amazon OpenSearch Serverless</option>
           </select>
-        </div>
-      `;
+        </div>`;
+
+      // Render banner
+      if (isAws) {
+        // AWS docs style: wordmark with orange service accent, no logo mark
+        const service = dist === 'aoss' ? 'Serverless' : 'Service';
+        document.getElementById('dist-banner').innerHTML = `
+          <span class="title" style="font-weight:700;letter-spacing:.2px">Amazon OpenSearch <span style="color:#FF9900">${service}</span></span>
+          <span class="title" style="font-weight:400;opacity:.6;font-size:12px">API Reference</span>
+          ${switcherHtml}
+        `;
+      } else {
+        document.getElementById('dist-banner').innerHTML = `
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="45" cy="45" r="35" fill="none" stroke="#0a7b8f" stroke-width="8"/>
+            <circle cx="45" cy="45" r="14" fill="#0a7b8f"/>
+            <line x1="70" y1="70" x2="92" y2="92" stroke="#ef6c00" stroke-width="10" stroke-linecap="round"/>
+          </svg>
+          <span class="title">OpenSearch API Reference</span>
+          ${switcherHtml}
+        `;
+      }
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
