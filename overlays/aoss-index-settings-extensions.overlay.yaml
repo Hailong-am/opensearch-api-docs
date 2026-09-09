@@ -1,0 +1,66 @@
+# AOSS-only index lifecycle settings (amazon-serverless distribution).
+#
+# On Amazon OpenSearch Serverless, V2 collections expose data-lifecycle index
+# settings that have NO counterpart in OSS OpenSearch. They are accepted by the
+# metadata service (JunoMetadata branch 3.3) from the create-index settings
+# body, PUT /{index}/_settings, and index/component templates, and are handled
+# entirely in AOSS `com.amazon.junometadataservice` handler code -- there is no
+# OSS `Setting<>` for either, so they are absent from the base OpenSearch
+# IndexSettings schema and must be ADDED for the amazon-serverless view.
+#
+#   - index.data.retention   : V2-collection data-retention lifecycle (duration)
+#   - index.warm.after       : warm-tier migration threshold (duration);
+#                              normalized in CreateIndexHandler
+#   - index.timestamp_field  : name of the event-timestamp field driving
+#                              time-based lifecycle (retention / warm migration)
+#
+# Source: JunoMetadata SettingsUtil.INDEX_SETTING_DATA_RETENTION (SettingsUtil.java:63),
+#         SettingsUtil.INDEX_SETTING_WARM_AFTER (SettingsUtil.java:65),
+#         SettingsUtil.INDEX_TIMESTAMP_FIELD_SETTING ("CUSTOM AOSS SETTING").
+#
+# Dotted-key + $ref _common___Duration convention matches the existing
+# `soft_deletes.retention_lease.period` property in the same schema.
+# Applied with the speakeasy overlay CLI (the tool the whole pipeline uses).
+overlay: 1.0.0
+info:
+  title: AOSS-specific index lifecycle settings extensions
+  version: 1.0.0
+extends: ./opensearch-openapi.yaml
+
+actions:
+  - target: "$.components.schemas['indices._common___IndexSettings'].properties"
+    description: >
+      Add three AOSS-only (amazon-serverless) data-lifecycle index settings.
+      All are absent from OSS OpenSearch (no Setting<> counterpart) and are
+      accepted by the AOSS metadata service on the index settings body,
+      PUT /{index}/_settings, and index/component templates.
+    update:
+      data.retention:
+        x-distributions:
+          - amazon-serverless
+        $ref: '#/components/schemas/_common___Duration'
+        description: >-
+          AOSS-only. Data-retention period for a V2 collection index. After the
+          configured duration elapses, the index's data becomes eligible for
+          expiry per the collection's lifecycle policy. Expressed as a duration
+          string (e.g. `7d`, `24h`).
+      warm.after:
+        x-distributions:
+          - amazon-serverless
+        $ref: '#/components/schemas/_common___Duration'
+        description: >-
+          AOSS-only. Warm-tier migration threshold: an index older than this
+          duration is migrated from hot to the warm tier. Expressed as a
+          duration string (e.g. `30d`); normalized in the AOSS metadata
+          service CreateIndexHandler.
+      timestamp_field:
+        x-distributions:
+          - amazon-serverless
+        $ref: '#/components/schemas/_common___Field'
+        description: >-
+          AOSS-only. Name of the document field holding the event timestamp,
+          used by V2 collections to drive time-based data lifecycle (retention
+          and warm-tier migration). Absent from OSS OpenSearch (no `Setting<>`
+          counterpart); accepted by the AOSS metadata service from the
+          create-index settings body, `PUT /{index}/_settings`, and
+          index/component templates.
