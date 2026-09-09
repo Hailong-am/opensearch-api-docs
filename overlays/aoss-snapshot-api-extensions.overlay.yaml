@@ -4,7 +4,7 @@ info:
   version: 1.0.0
 extends: ./opensearch-openapi.yaml
 
-# Adds three AOSS-only (amazon-serverless distribution) extensions to the
+# Adds two AOSS-only (amazon-serverless distribution) extensions to the
 # standard OpenSearch snapshot APIs discovered via JunoIndexingCoordinator
 # git log + name.equals() grep analysis (2026-08-04):
 #
@@ -16,8 +16,10 @@ extends: ./opensearch-openapi.yaml
 #      - sourceCollectionId: list snapshots from a source collection's repository
 #        (CCR preflight); entire source() method is AOSS-only, absent from OSS
 #
-#   3. PUT  /_snapshot/{repo}  (create/update repository)
-#      - crypto_settings: KMS encryption config for snapshot repositories
+# NOTE: crypto_settings on PUT /_snapshot/{repo} was previously listed here but
+# removed (2026-09-09): it is an OSS-native field (org.opensearch, since 2.10.0)
+# present verbatim in both OSS and JunoIndexingCoordinator PutRepositoryRequest,
+# NOT an AOSS-only extension.
 
 actions:
   # -----------------------------------------------------------------------
@@ -89,39 +91,3 @@ actions:
                     the source collection's S3 repository path instead of the
                     target collection's path. Used for CCR preflight validation.
                     Requires the CCR feature flag to be enabled for the account.
-
-  # -----------------------------------------------------------------------
-  # 3. snapshot.create_repository requestBody -- add crypto_settings
-  # -----------------------------------------------------------------------
-  - target: "$.components.requestBodies['snapshot.create_repository'].content['application/json'].schema.properties"
-    description: >
-      Add the AOSS-only crypto_settings field to PUT /_snapshot/{repo}.
-      Present in JunoIndexingCoordinator PutRepositoryRequest but absent
-      from the OSS equivalent; the worker layer (OpenSearch opensearch-3.7.0)
-      receives it via transport after the coordinator parses it.
-    update:
-      crypto_settings:
-        x-distributions:
-          - amazon-serverless
-        type: object
-        description: >-
-          AOSS-only. Encryption configuration for the snapshot repository.
-          Specifies the AWS KMS key and encryption context used to protect
-          snapshot data at rest. Required when creating an encrypted snapshot
-          repository in AOSS.
-        properties:
-          kms_key_arn:
-            type: string
-            description: >-
-              The ARN of the AWS KMS key used to encrypt snapshot data.
-            example: 'arn:aws:kms:us-west-2:123456789012:key/mrk-abc123'
-          encryption_context:
-            type: object
-            additionalProperties:
-              type: string
-            description: >-
-              Key-value pairs forming the encryption context passed to KMS
-              during cryptographic operations. Must match the context used
-              when the key was created.
-        required:
-          - kms_key_arn
