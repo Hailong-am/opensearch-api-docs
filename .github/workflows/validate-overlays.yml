@@ -1,7 +1,7 @@
 name: Validate Generated Overlays
 
 # Codegen idempotency gate. The AOSS allowlist overlay
-# (overlays/amazon-serverless-allowlist.overlay.yaml) is GENERATED from
+# (overlays/aoss/amazon-serverless-allowlist.overlay.yaml) is GENERATED from
 # spec/aoss-dp-api-allowlist.md by tools/generate-aoss-allowlist.py. This job
 # regenerates it against the freshly-fetched OSS base and fails if the checked-in
 # overlay is stale (`regenerate && git diff --exit-code`), so a hand-edit of the
@@ -10,7 +10,7 @@ on:
   pull_request:
     paths:
       - 'spec/aoss-dp-api-allowlist.md'
-      - 'overlays/amazon-serverless-allowlist.overlay.yaml'
+      - 'overlays/aoss/amazon-serverless-allowlist.overlay.yaml'
       - 'tools/generate-aoss-allowlist.py'
       - 'tools/build-distribution-specs.sh'
       - '.github/workflows/validate-overlays.yml'
@@ -46,13 +46,13 @@ jobs:
           python3 tools/generate-aoss-allowlist.py \
             spec/aoss-dp-api-allowlist.md \
             build/opensearch-openapi.yaml \
-            overlays/amazon-serverless-allowlist.overlay.yaml
+            overlays/aoss/amazon-serverless-allowlist.overlay.yaml
 
       - name: Fail if the generated overlay is stale
         run: |
-          if ! git diff --exit-code -- overlays/amazon-serverless-allowlist.overlay.yaml; then
-            echo "::error::overlays/amazon-serverless-allowlist.overlay.yaml is out of date." >&2
-            echo "Run: python3 tools/generate-aoss-allowlist.py spec/aoss-dp-api-allowlist.md build/opensearch-openapi.yaml overlays/amazon-serverless-allowlist.overlay.yaml" >&2
+          if ! git diff --exit-code -- overlays/aoss/amazon-serverless-allowlist.overlay.yaml; then
+            echo "::error::overlays/aoss/amazon-serverless-allowlist.overlay.yaml is out of date." >&2
+            echo "Run: python3 tools/generate-aoss-allowlist.py spec/aoss-dp-api-allowlist.md build/opensearch-openapi.yaml overlays/aoss/amazon-serverless-allowlist.overlay.yaml" >&2
             echo "then commit the result. Do NOT hand-edit the generated overlay." >&2
             exit 1
           fi
