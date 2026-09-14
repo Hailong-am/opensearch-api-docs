@@ -26,17 +26,19 @@ overlays/
   amazon-serverless-allowlist.overlay.yaml  AOSS surface (GENERATED — do not hand-edit;
                                             everything not in the allowlist is removed)
   aos-extensions.overlay.yaml               AOS UltraWarm + Cold Tier additions
-  aoss-snapshot-api-extensions.overlay.yaml AOSS snapshot body-field additions
-  aoss-unsettable-index-settings-remove.overlay.yaml
-                                            (AOSS) removes number_of_shards / number_of_replicas
-                                            from IndexSettings — the only two index settings with
-                                            NO per-account dynamic-config override (the collection
-                                            owns topology). Account-conditional settings
-                                            (refresh_interval, warm.after, kNN opts, timestamp_field)
-                                            are deliberately LEFT IN — a per-account override can
-                                            enable them, so a static removal would be wrong.
-  aoss-refresh-remove.overlay.yaml          (AOSS) strips the write-op refresh param — rejected
-                                            for EVERY account (400), no override exists
+  aoss-extensions.overlay.yaml                                       AOSS hand-authored overlays, merged (4-in-1):
+                                            snapshot body-field additions (sourceCollectionId,
+                                            allow_regex); index lifecycle settings additions
+                                            (data.retention, warm.after, timestamp_field);
+                                            removal of number_of_shards / number_of_replicas
+                                            (the only two index settings with NO per-account
+                                            dynamic-config override — the collection owns
+                                            topology); and removal of the write-op refresh param
+                                            (rejected for EVERY account, 400, no override).
+                                            Account-conditional settings (refresh_interval, kNN
+                                            opts) are deliberately LEFT IN. Requires speakeasy
+                                            ($ref filter predicates). The GENERATED allowlist
+                                            overlay above stays separate.
 tools/
   build-distribution-specs.sh  the build (all paths repo-relative)
   generate-aoss-allowlist.py   regenerates the AOSS allowlist overlay from the allowlist md

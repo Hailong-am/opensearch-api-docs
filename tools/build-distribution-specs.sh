@@ -7,10 +7,11 @@
 #
 #   - Base OSS spec:      $OSS_SPEC_URL  (default: api-spec.opensearch.org),
 #                         cached to spec/opensearch-openapi.yaml as a fallback
-#   - Blocklist overlays:  overlays/amazon-managed.overlay.yaml, overlays/amazon-serverless.overlay.yaml
-#   - Extension overlays:  overlays/aos-extensions.overlay.yaml (UltraWarm + Cold, AOS-only),
-#                          overlays/aoss-snapshot-api-extensions.overlay.yaml
-#   - Constraint overlays: overlays/aoss-refresh-constraint.overlay.yaml
+#   - AOS overlays:       overlays/aos/amazon-managed.overlay.yaml (blocklist),
+#                         overlays/aos/aos-extensions.overlay.yaml (UltraWarm + Cold, AOS-only)
+#   - AOSS overlays:      overlays/aoss/amazon-serverless-allowlist.overlay.yaml (GENERATED allowlist),
+#                         overlays/aoss/aoss-extensions.overlay.yaml (hand-authored, merged: snapshot + index
+#                         lifecycle additions, unsettable-settings + refresh removals)
 #   - Tools:               tools/inject-tags.py, tools/strip-deprecated.py
 #
 # All local paths are repo-relative. No home-dir dependencies. No ad-hoc JSON edits.
@@ -74,20 +75,20 @@ echo "--- AOS ---"
 echo "  Step 1: Apply remove overlay (blocklist)"
 "$SPEAKEASY" overlay apply \
   --schema "$BASE_SPEC" \
-  --overlay "$OVERLAYS_DIR/amazon-managed.overlay.yaml" \
+  --overlay "$OVERLAYS_DIR/aos/amazon-managed.overlay.yaml" \
   > "$BUILD_DIR/opensearch-openapi-aos.yaml"
 
 echo "  Step 2: Apply AOS-only extensions overlay (UltraWarm + Cold tier)"
 "$SPEAKEASY" overlay apply \
   --schema "$BUILD_DIR/opensearch-openapi-aos.yaml" \
-  --overlay "$OVERLAYS_DIR/aos-extensions.overlay.yaml" \
+  --overlay "$OVERLAYS_DIR/aos/aos-extensions.overlay.yaml" \
   > "$BUILD_DIR/opensearch-openapi-aos-full.yaml"
 
 # --- AOSS: allowlist overlay (generated) + snapshot extension + unsettable + refresh strip ---
 echo ""
 echo "--- AOSS ---"
 echo "  Step 0: Regenerate allowlist overlay from the DP API allowlist + current base"
-# ALLOWLIST strategy: overlays/amazon-serverless-allowlist.overlay.yaml is a
+# ALLOWLIST strategy: overlays/aoss/amazon-serverless-allowlist.overlay.yaml is a
 # GENERATED artifact -- every base (path) not covered by the customer-facing DP
 # API allowlist (spec/aoss-dp-api-allowlist.md, from parser V2 doc/APIs.md) is
 # removed. Regenerating here keeps the overlay in lockstep with the base fetched
@@ -95,38 +96,24 @@ echo "  Step 0: Regenerate allowlist overlay from the DP API allowlist + current
 python3 "$TOOLS_DIR/generate-aoss-allowlist.py" \
   "$SPEC_DIR/aoss-dp-api-allowlist.md" \
   "$BASE_SPEC" \
-  "$OVERLAYS_DIR/amazon-serverless-allowlist.overlay.yaml"
+  "$OVERLAYS_DIR/aoss/amazon-serverless-allowlist.overlay.yaml"
 
 echo "  Step 1: Apply allowlist overlay (remove everything not in the allowlist)"
 "$SPEAKEASY" overlay apply \
   --schema "$BASE_SPEC" \
-  --overlay "$OVERLAYS_DIR/amazon-serverless-allowlist.overlay.yaml" \
+  --overlay "$OVERLAYS_DIR/aoss/amazon-serverless-allowlist.overlay.yaml" \
   > "$BUILD_DIR/opensearch-openapi-aoss.yaml"
 
-echo "  Step 2: Apply snapshot extension overlay (AOSS body fields on the kept snapshot paths)"
+echo "  Step 2: Apply merged hand-authored AOSS overlays (snapshot + index-lifecycle"
+echo "          extensions, unsettable-settings removal, refresh removal)"
+# The four hand-authored AOSS overlays are merged into one aoss-extensions.overlay.yaml
+# (removes-then-adds; disjoint JSONPath targets so a single pass is order-safe).
+# The generated allowlist overlay (Step 1) stays separate so
+# tools/generate-aoss-allowlist.py can still own it. Uses $ref filter predicates
+# -> speakeasy (already the pipeline tool).
 "$SPEAKEASY" overlay apply \
   --schema "$BUILD_DIR/opensearch-openapi-aoss.yaml" \
-  --overlay "$OVERLAYS_DIR/aoss-snapshot-api-extensions.overlay.yaml" \
-  > "$BUILD_DIR/opensearch-openapi-aoss-snap.yaml"
-
-echo "  Step 3: Remove structurally-unsettable index settings (number_of_shards / number_of_replicas)"
-# These two have NO per-account dynamic-config escape hatch -- no account can
-# ever set them (the collection owns shard/replica topology), so they are the
-# only index SETTINGS removed from the AOSS schema. Account-conditional settings
-# (refresh_interval, warm.after, kNN opts, timestamp_field) are left in
-# deliberately -- a per-account override can enable them.
-"$SPEAKEASY" overlay apply \
-  --schema "$BUILD_DIR/opensearch-openapi-aoss-snap.yaml" \
-  --overlay "$OVERLAYS_DIR/aoss-unsettable-index-settings-remove.overlay.yaml" \
-  > "$BUILD_DIR/opensearch-openapi-aoss-unsettable.yaml"
-
-echo "  Step 4: Apply refresh-removal overlay"
-# `refresh` is rejected for EVERY account (no dynamic-config override exists), so
-# like shards/replicas it is genuinely non-settable and removed from the AOSS
-# surface. Uses $ref filter predicates -> speakeasy (already the pipeline tool).
-"$SPEAKEASY" overlay apply \
-  --schema "$BUILD_DIR/opensearch-openapi-aoss-unsettable.yaml" \
-  --overlay "$OVERLAYS_DIR/aoss-refresh-remove.overlay.yaml" \
+  --overlay "$OVERLAYS_DIR/aoss/aoss-extensions.overlay.yaml" \
   > "$BUILD_DIR/opensearch-openapi-aoss-full.yaml"
 # NOTE: the old empirical-behavior blocklist (reindex / update_by_query /
 # delete_by_query + rethrottles) is now REDUNDANT -- none of those paths are in
