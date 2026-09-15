@@ -6,7 +6,9 @@
     <title>OpenSearch API Reference</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/x-icon" href="https://docs.opensearch.org/latest/favicon.ico">
+    <link rel="shortcut icon" href="https://docs.opensearch.org/latest/favicon.ico" type="image/x-icon">
+    <meta name="description" content="OpenSearch REST API reference for the OSS, Amazon OpenSearch Service, and Amazon OpenSearch Serverless distributions." />
     <!-- Open Sans — the docs.opensearch.org body/heading typeface. -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -40,6 +42,25 @@
       }
       .os-dist-banner .title { font-weight: 500; }
       .os-dist-banner img { height: 22px; width: auto; flex-shrink: 0; }
+      .os-dist-banner .brand-divider {
+        width: 1px; height: 20px; background: rgba(0, 59, 92, 0.2); flex-shrink: 0;
+      }
+      /* push the toggle to the right edge */
+      .os-dist-banner .theme-toggle { margin-left: auto; }
+      .theme-toggle {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 30px; height: 30px; padding: 0;
+        background: transparent; border: 1px solid rgba(0, 59, 92, 0.25);
+        border-radius: 6px; color: #003b5c; cursor: pointer;
+        transition: background-color 0.15s, border-color 0.15s;
+      }
+      .theme-toggle:hover {
+        background: rgba(0, 59, 92, 0.08); border-color: rgba(0, 59, 92, 0.5);
+      }
+      /* show sun in light, moon in dark */
+      .theme-toggle .icon-moon { display: none; }
+      body.banner-dark .theme-toggle .icon-sun { display: none; }
+      body.banner-dark .theme-toggle .icon-moon { display: inline; }
 
       /* Back to top — docs.opensearch.org top-link */
       .top-link {
@@ -81,7 +102,13 @@
     <!-- Static banner (Scalar's own document switcher handles OSS/AOS/AOSS) -->
     <div class="os-dist-banner">
       <img src="https://opensearch.org/wp-content/uploads/2024/08/opensearch_logo_default.svg" alt="OpenSearch" />
+      <span class="brand-divider" aria-hidden="true"></span>
       <span class="title">API Reference</span>
+      <button class="theme-toggle" id="theme-toggle" type="button" title="Toggle dark mode" aria-label="Toggle dark mode">
+        <!-- sun/moon icon swaps via CSS on body.banner-dark -->
+        <svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
+      </button>
     </div>
     <!-- Scalar renders here -->
     <div id="app"></div>
@@ -93,13 +120,42 @@
         document.getElementById('top-link').classList.toggle('visible', window.scrollY > 400);
       });
 
+      // Dark/light toggle in the banner. Scalar exposes no theme API, and
+      // flipping the .dark-mode class directly is reverted by Scalar's own
+      // reactive state — so instead we PROXY a click to Scalar's built-in
+      // color-mode toggle (its sidebar switch, button.group/toggle). A
+      // MutationObserver mirrors the resulting theme onto body.banner-dark so
+      // the banner's sun/moon icon stays in sync however the theme changed.
+      (function () {
+        const btn = document.getElementById('theme-toggle');
+
+        const isDark = () => document.querySelector('.dark-mode') !== null;
+        const syncIcon = () => document.body.classList.toggle('banner-dark', isDark());
+
+        new MutationObserver(syncIcon).observe(document.documentElement, {
+          subtree: true, attributes: true, attributeFilter: ['class'],
+        });
+
+        const scalarToggle = () =>
+          document.querySelector('button[class*="group/toggle"]');
+
+        btn.addEventListener('click', () => {
+          const t = scalarToggle();
+          if (t) t.click();          // let Scalar own the state change
+          setTimeout(syncIcon, 0);   // reflect it after Scalar re-renders
+        });
+
+        syncIcon();
+      })();
+
+
       // Options shared by every distribution configuration.
       const base = {
         theme: 'none',
         layout: 'modern',
         tagsSorter: 'alpha',
         darkMode: false,
-        favicon: 'favicon.ico',
+        favicon: 'https://docs.opensearch.org/latest/favicon.ico',
         showSidebar: true,
         operationTitleSource: 'path',
         defaultOpenFirstTag: true,
