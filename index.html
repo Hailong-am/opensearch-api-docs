@@ -20,9 +20,9 @@
 
       /* Distribution banner — mimics Scalar's custom-header layout
          (CodePen "Scalar Custom Header Example"): fixed height, sticky,
-         space-between, inset bottom hairline. Colors are pinned to the
-         docs.opensearch.org light palette (NOT theme vars), so the banner
-         stays light in every theme. */
+         space-between, inset bottom hairline. Light by default; the
+         body.banner-dark rules below darken it in lockstep with Scalar's
+         theme (mirrored by the MutationObserver in the script). */
       :root { --scalar-custom-header-height: 50px; }
       .os-dist-banner {
         height: var(--scalar-custom-header-height);
@@ -61,6 +61,29 @@
       .theme-toggle .icon-moon { display: none; }
       body.banner-dark .theme-toggle .icon-sun { display: none; }
       body.banner-dark .theme-toggle .icon-moon { display: inline; }
+
+      /* Dark banner — tracks Scalar's theme via body.banner-dark (toggled by
+         the MutationObserver in the script). Matches the OpenSearch dark
+         content palette (#0d1b2a). */
+      body.banner-dark .os-dist-banner {
+        background: #0d1b2a;
+        color: rgba(255, 255, 255, 0.9);
+        box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+      }
+      body.banner-dark .os-dist-banner img {
+        filter: brightness(0) invert(1);
+      }
+      body.banner-dark .os-dist-banner .brand-divider {
+        background: rgba(255, 255, 255, 0.2);
+      }
+      body.banner-dark .theme-toggle {
+        border-color: rgba(255, 255, 255, 0.25);
+        color: rgba(255, 255, 255, 0.9);
+      }
+      body.banner-dark .theme-toggle:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.5);
+      }
 
       /* Back to top — docs.opensearch.org top-link */
       .top-link {
