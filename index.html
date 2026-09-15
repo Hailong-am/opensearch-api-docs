@@ -331,17 +331,6 @@
       // Also run once Scalar has mounted its root.
       syncScalarTheme();
 
-      // Cross-tab sync: the 'storage' event fires only in OTHER tabs of this
-      // origin (never the tab that made the change), so it cannot replace the
-      // same-tab observer above — it complements it. When a reader toggles the
-      // theme in another tab, Scalar persists it under localStorage['colorMode']
-      // ('dark' | 'light'); mirror that here so this tab's banner follows.
-      window.addEventListener('storage', (e) => {
-        if (e.key === 'colorMode' && e.newValue) {
-          document.body.classList.toggle('dark', e.newValue === 'dark');
-        }
-      });
-
       // Back to top visibility
       window.addEventListener('scroll', () => {
         document.getElementById('top-link').classList.toggle('visible', window.scrollY > 400);
