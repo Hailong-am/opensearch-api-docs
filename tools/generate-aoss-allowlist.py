@@ -140,6 +140,7 @@ def main():
     row_cands = []         # (parser_path, set(candidates)) for kept rows, for the invariant
     kept_rows = 0
     excluded_rows = 0
+    allow_methods = {}     # norm_path -> set of allowlisted HTTP methods (lowercase)
     for methods, path, excluded in entries:
         if excluded:
             excluded_rows += 1
@@ -148,6 +149,8 @@ def main():
         cands = normalize(path)
         row_cands.append((path, cands))
         allow_paths |= cands
+        for c in cands:
+            allow_methods.setdefault(c, set()).update(methods)
 
     base = yaml.safe_load(Path(args.base_spec).read_text())
     base_paths = base.get("paths", {})
@@ -176,19 +179,35 @@ def main():
             continue
         unmatched.append((parser_path, sorted(cands)))
 
-    # Decide removes: keep a base path iff its norm form is in allow_paths.
-    removes = []
+    # Decide removes.
+    #  - A base path NOT in the allowlist at all -> PATH-LEVEL remove ($.paths['/x']).
+    #  - A base path that IS allowlisted but only for SOME methods (a MIXED path,
+    #    e.g. GET /_snapshot/{repository}/{snapshot} allowed while DELETE/POST/PUT
+    #    are not) -> METHOD-LEVEL removes ($.paths['/x'].delete) for exactly the
+    #    base methods the allowlist does not permit, so the allowed method survives.
+    # The allowlist is normalized path-level, so allow_methods[norm] is the union
+    # of methods permitted across every allowlist row matching that path.
+    path_removes = []          # real_path (whole path item)
+    method_removes = []        # (real_path, method) tuples
     kept_base_paths = 0
     for real_path, item in base_paths.items():
-        if normalize_base(real_path) in allow_paths:
-            kept_base_paths += 1
-        else:
-            removes.append(real_path)
+        norm = normalize_base(real_path)
+        if norm not in allow_paths:
+            path_removes.append(real_path)
+            continue
+        kept_base_paths += 1
+        permitted = allow_methods.get(norm, set())
+        # methods actually defined on this base path item
+        base_methods = {m for m in item.keys() if m.lower() in HTTP_METHODS} if isinstance(item, dict) else set()
+        for m in base_methods:
+            if m.lower() not in permitted:
+                method_removes.append((real_path, m.lower()))
+    removes = path_removes    # keep the name for the diagnostics below
 
     print(f"allowlist rows: kept={kept_rows} excluded(lock)={excluded_rows}")
     print(f"allow norm-paths: {len(allow_paths)}")
     print(f"base: {len(base_paths)} paths")
-    print(f"KEEP base paths: {kept_base_paths}   REMOVE base paths: {len(removes)}")
+    print(f"KEEP base paths: {kept_base_paths}   REMOVE base paths: {len(path_removes)}   REMOVE methods (mixed paths): {len(method_removes)}")
     print()
     if unmatched:
         print(f"!! INVARIANT VIOLATION: {len(unmatched)} allowlist rows matched NO base path and are not KNOWN_UNMODELED:")
@@ -208,15 +227,17 @@ def main():
             "title": "Amazon OpenSearch Serverless - API Surface Overlay (allowlist-generated)",
             "version": "2026.09.03",
         },
-        "actions": [
-            {"target": f"$.paths['{rp}']", "remove": True} for rp in sorted(removes)
-        ],
+        "actions": (
+            [{"target": f"$.paths['{rp}']", "remove": True} for rp in sorted(path_removes)]
+            + [{"target": f"$.paths['{rp}'].{m}", "remove": True}
+               for rp, m in sorted(method_removes)]
+        ),
     }
     if not args.report:
         Path(args.out_overlay).write_text(
             yaml.safe_dump(overlay, sort_keys=False, default_flow_style=False, width=200)
         )
-        print(f"wrote {args.out_overlay}: {len(removes)} remove actions")
+        print(f"wrote {args.out_overlay}: {len(path_removes)} path removes + {len(method_removes)} method removes")
 
 
 if __name__ == "__main__":
