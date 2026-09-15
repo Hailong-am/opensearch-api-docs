@@ -200,3 +200,32 @@ actions:
                     the source collection's S3 repository path instead of the
                     target collection's path. Used for CCR preflight validation.
                     Requires the CCR feature flag to be enabled for the account.
+
+  # 5. AOSS snapshot repository is a fixed value (description-only override).
+  #    On AOSS the snapshot repository is not customer-chosen: it is the fixed
+  #    managed repository `aoss-automated`. The OSS description presents it as a
+  #    comma-separated, wildcard-capable list of repository names, which does not
+  #    apply on AOSS. These two overrides correct only the DESCRIPTION of the
+  #    repository path parameter on the two customer-callable snapshot ops
+  #    (GET /_snapshot/{repo}/{snap} and POST /_snapshot/{repo}/{snap}/_restore).
+  #    The schema is left unchanged.
+  - target: "$.components.parameters['snapshot.get___path.repository']"
+    description: >
+      Pin the repository path-parameter description for AOSS GET
+      /_snapshot/{repo}/{snap}: AOSS uses a single fixed managed repository.
+    update:
+      description: >-
+        On Amazon OpenSearch Serverless the snapshot repository is a fixed,
+        managed value: `aoss-automated`. Use `aoss-automated` as the repository
+        name. Customer-defined repositories and wildcard (`*`) expressions are
+        not supported.
+  - target: "$.components.parameters['snapshot.restore___path.repository']"
+    description: >
+      Pin the repository path-parameter description for AOSS POST
+      /_snapshot/{repo}/{snap}/_restore: AOSS uses a single fixed managed repository.
+    update:
+      description: >-
+        On Amazon OpenSearch Serverless the snapshot repository is a fixed,
+        managed value: `aoss-automated`. Use `aoss-automated` as the repository
+        name. Customer-defined repositories and wildcard (`*`) expressions are
+        not supported.
