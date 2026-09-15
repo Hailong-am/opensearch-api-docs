@@ -13,7 +13,7 @@
 #   - Base OSS spec:      spec/opensearch-openapi.yaml  (COMMITTED, tagged; the default)
 #   - AOS overlays:       overlays/aos/amazon-managed.overlay.yaml (blocklist),
 #                         overlays/aos/aos-extensions.overlay.yaml (UltraWarm + Cold, AOS-only, tagged inline)
-#   - AOSS overlays:      overlays/aoss/amazon-serverless-allowlist.overlay.yaml (GENERATED allowlist),
+#   - AOSS overlays:      overlays/aoss/amazon-serverless-block.overlay.yaml (GENERATED allowlist),
 #                         overlays/aoss/aoss-extensions.overlay.yaml (hand-authored, merged: snapshot + index
 #                         lifecycle additions, unsettable-settings + refresh removals)
 #   - Tools:               tools/strip-deprecated.py (tags come from the base
@@ -102,7 +102,7 @@ echo "  Step 2: Apply AOS-only extensions overlay (UltraWarm + Cold tier)"
 echo ""
 echo "--- AOSS ---"
 echo "  Step 0: Regenerate allowlist overlay from the DP API allowlist + current base"
-# ALLOWLIST strategy: overlays/aoss/amazon-serverless-allowlist.overlay.yaml is a
+# ALLOWLIST strategy: overlays/aoss/amazon-serverless-block.overlay.yaml is a
 # GENERATED artifact -- every base (path) not covered by the customer-facing DP
 # API allowlist (spec/aoss-dp-api-allowlist.md, from parser V2 doc/APIs.md) is
 # removed. Regenerating here keeps the overlay in lockstep with the base fetched
@@ -110,12 +110,12 @@ echo "  Step 0: Regenerate allowlist overlay from the DP API allowlist + current
 python3 "$TOOLS_DIR/generate-aoss-allowlist.py" \
   "$SPEC_DIR/aoss-dp-api-allowlist.md" \
   "$BASE_SPEC" \
-  "$OVERLAYS_DIR/aoss/amazon-serverless-allowlist.overlay.yaml"
+  "$OVERLAYS_DIR/aoss/amazon-serverless-block.overlay.yaml"
 
 echo "  Step 1: Apply allowlist overlay (remove everything not in the allowlist)"
 "$SPEAKEASY" overlay apply \
   --schema "$BASE_SPEC" \
-  --overlay "$OVERLAYS_DIR/aoss/amazon-serverless-allowlist.overlay.yaml" \
+  --overlay "$OVERLAYS_DIR/aoss/amazon-serverless-block.overlay.yaml" \
   > "$BUILD_DIR/opensearch-openapi-aoss.yaml"
 
 echo "  Step 2: Apply merged hand-authored AOSS overlays (snapshot + index-lifecycle"
