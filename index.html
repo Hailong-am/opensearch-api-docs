@@ -181,6 +181,33 @@
         background: #ffffff; color: #003b5c;
       }
 
+      /* Dark-mode banner — mirrors Scalar's .dark-mode via body.dark
+         (see MutationObserver below). Scoped to :not(.aws-style) so the
+         AWS distributions keep their Squid Ink banner. */
+      body.dark:not(.aws-style) .os-dist-banner {
+        background: #0d1b2a;
+        color: rgba(255,255,255,0.9);
+        border-bottom-color: rgba(255,255,255,0.08);
+      }
+      body.dark:not(.aws-style) .os-dist-banner img {
+        filter: brightness(0) invert(1);
+      }
+      body.dark:not(.aws-style) .os-dist-banner select {
+        background-color: rgba(255,255,255,0.08);
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(255,255,255,0.7)'/%3E%3C/svg%3E");
+        border-color: rgba(255,255,255,0.2);
+        color: rgba(255,255,255,0.9);
+      }
+      body.dark:not(.aws-style) .os-dist-banner select option {
+        background: #0d1b2a; color: rgba(255,255,255,0.9);
+      }
+      body.dark:not(.aws-style) .top-link {
+        background: #00a3e0;
+      }
+      body.dark:not(.aws-style) .top-link:hover {
+        background: #46bde9;
+      }
+
       /* AWS-style banner overrides (dist = aos | aoss) */
       body.aws-style .os-dist-banner {
         background: #232F3E;
@@ -289,6 +316,21 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
     <script>
+      // Mirror Scalar's theme onto <body> so the banner and back-to-top
+      // (which live outside Scalar's root) track its dark/light toggle.
+      // Scalar signals the theme only by toggling a .dark-mode / .light-mode
+      // class in the DOM — there is no event or JS API — so watch the class
+      // attribute with a MutationObserver.
+      const syncScalarTheme = () => {
+        const dark = document.querySelector('.dark-mode') !== null;
+        document.body.classList.toggle('dark', dark);
+      };
+      new MutationObserver(syncScalarTheme).observe(document.documentElement, {
+        subtree: true, attributes: true, attributeFilter: ['class'],
+      });
+      // Also run once Scalar has mounted its root.
+      syncScalarTheme();
+
       // Back to top visibility
       window.addEventListener('scroll', () => {
         document.getElementById('top-link').classList.toggle('visible', window.scrollY > 400);
