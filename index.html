@@ -5,24 +5,36 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <!-- Open Sans — the docs.opensearch.org body/heading typeface. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
     <style>
-      /* OpenSearch Light Mode */
+      /* Match docs.opensearch.org typography for the OSS view (Just-the-Docs
+         OpenSearch theme). The AWS distributions keep Amazon Ember below. */
+      .light-mode, .dark-mode {
+        --scalar-font: "Open Sans", "Segoe UI", Tahoma, sans-serif;
+        --scalar-font-code: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      }
+
+      /* OpenSearch Light Mode — docs.opensearch.org palette
+         (link #0055A6, secondary accent #00a3e0, navy #003b5c). */
       .light-mode {
-        --scalar-color-1: #1a1a2e;
+        --scalar-color-1: #002a3a;
         --scalar-color-2: rgba(0, 59, 92, 0.7);
         --scalar-color-3: rgba(0, 59, 92, 0.45);
-        --scalar-color-accent: #0a7b8f;
+        --scalar-color-accent: #0055a6;
         --scalar-background-1: #ffffff;
-        --scalar-background-2: #f5f7fa;
+        --scalar-background-2: #f5f7f7;
         --scalar-background-3: #eef1f6;
-        --scalar-background-accent: rgba(10, 123, 143, 0.08);
+        --scalar-background-accent: rgba(0, 85, 166, 0.08);
         --scalar-border-color: rgba(0, 59, 92, 0.1);
       }
       .light-mode .sidebar {
         --scalar-sidebar-background-1: #003b5c;
         --scalar-sidebar-item-hover-color: #ffffff;
         --scalar-sidebar-item-hover-background: rgba(255, 255, 255, 0.1);
-        --scalar-sidebar-item-active-background: rgba(10, 123, 143, 0.3);
+        --scalar-sidebar-item-active-background: rgba(0, 163, 224, 0.3);
         --scalar-sidebar-border-color: rgba(255, 255, 255, 0.1);
         --scalar-sidebar-color-1: rgba(255, 255, 255, 0.95);
         --scalar-sidebar-color-2: rgba(255, 255, 255, 0.7);
@@ -37,22 +49,22 @@
         --scalar-color-1: rgba(255, 255, 255, 0.9);
         --scalar-color-2: rgba(255, 255, 255, 0.55);
         --scalar-color-3: rgba(255, 255, 255, 0.35);
-        --scalar-color-accent: #3cc5d8;
+        --scalar-color-accent: #00a3e0;
         --scalar-background-1: #0d1b2a;
         --scalar-background-2: #132238;
         --scalar-background-3: #1a2d47;
-        --scalar-background-accent: rgba(60, 197, 216, 0.1);
+        --scalar-background-accent: rgba(0, 163, 224, 0.1);
         --scalar-border-color: rgba(255, 255, 255, 0.08);
       }
       .dark-mode .sidebar {
         --scalar-sidebar-background-1: #091521;
         --scalar-sidebar-item-hover-color: #ffffff;
         --scalar-sidebar-item-hover-background: rgba(255, 255, 255, 0.05);
-        --scalar-sidebar-item-active-background: rgba(60, 197, 216, 0.15);
+        --scalar-sidebar-item-active-background: rgba(0, 163, 224, 0.15);
         --scalar-sidebar-border-color: rgba(255, 255, 255, 0.06);
         --scalar-sidebar-color-1: rgba(255, 255, 255, 0.85);
         --scalar-sidebar-color-2: rgba(255, 255, 255, 0.5);
-        --scalar-sidebar-color-active: #3cc5d8;
+        --scalar-sidebar-color-active: #00a3e0;
         --scalar-sidebar-search-background: rgba(255, 255, 255, 0.06);
         --scalar-sidebar-search-border-color: rgba(255, 255, 255, 0.08);
         --scalar-sidebar-search-color: rgba(255, 255, 255, 0.35);
@@ -66,16 +78,16 @@
         display: none;
       }
 
-      /* HTTP method badge colors — OpenSearch palette */
+      /* HTTP method badge colors — docs.opensearch.org palette */
       .light-mode {
-        --scalar-color-green: #0a7b8f;
+        --scalar-color-green: #0055a6;
         --scalar-color-blue: #005eb8;
         --scalar-color-orange: #ef6c00;
         --scalar-color-red: #c62828;
       }
       .dark-mode {
-        --scalar-color-green: #3cc5d8;
-        --scalar-color-blue: #5b9bd5;
+        --scalar-color-green: #00a3e0;
+        --scalar-color-blue: #46bde9;
         --scalar-color-orange: #ffa040;
         --scalar-color-red: #ef5350;
       }
@@ -129,7 +141,7 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-family: "Open Sans", "Segoe UI", Tahoma, sans-serif;
         z-index: 1000;
         position: sticky;
         top: 0;
@@ -161,7 +173,7 @@
         border-color: rgba(255,255,255,0.5); background-color: rgba(255,255,255,0.15);
       }
       .os-dist-banner select:focus {
-        border-color: #0a7b8f;
+        border-color: #0055a6;
       }
       .os-dist-banner select option {
         background: #003b5c; color: #fff;
@@ -205,7 +217,7 @@
       }
       .back-to-top:hover {
         opacity: 1;
-        background: #0a7b8f;
+        background: #0055a6;
       }
     </style>
 </head>
