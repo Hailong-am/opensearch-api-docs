@@ -1,3 +1,5 @@
+---
+---
 <!doctype html>
 <html>
 <head>
@@ -10,125 +12,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
     <style>
-      /* Match docs.opensearch.org typography for the OSS view (Just-the-Docs
-         OpenSearch theme). The AWS distributions keep Amazon Ember below. */
-      .light-mode, .dark-mode {
-        --scalar-font: "Open Sans", "Segoe UI", Tahoma, sans-serif;
-        --scalar-font-code: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-      }
-
-      /* OpenSearch Light Mode — docs.opensearch.org palette
-         (link #0055A6, secondary accent #00a3e0, navy #003b5c). */
-      .light-mode {
-        --scalar-color-1: #002a3a;
-        --scalar-color-2: rgba(0, 59, 92, 0.7);
-        --scalar-color-3: rgba(0, 59, 92, 0.45);
-        --scalar-color-accent: #0055a6;
-        --scalar-background-1: #ffffff;
-        --scalar-background-2: #f5f7f7;
-        --scalar-background-3: #eef1f6;
-        --scalar-background-accent: rgba(0, 85, 166, 0.08);
-        --scalar-border-color: rgba(0, 59, 92, 0.1);
-      }
-      .light-mode .sidebar {
-        --scalar-sidebar-background-1: #003b5c;
-        --scalar-sidebar-item-hover-color: #ffffff;
-        --scalar-sidebar-item-hover-background: rgba(255, 255, 255, 0.1);
-        --scalar-sidebar-item-active-background: rgba(0, 163, 224, 0.3);
-        --scalar-sidebar-border-color: rgba(255, 255, 255, 0.1);
-        --scalar-sidebar-color-1: rgba(255, 255, 255, 0.95);
-        --scalar-sidebar-color-2: rgba(255, 255, 255, 0.7);
-        --scalar-sidebar-color-active: #ffffff;
-        --scalar-sidebar-search-background: rgba(255, 255, 255, 0.1);
-        --scalar-sidebar-search-border-color: rgba(255, 255, 255, 0.15);
-        --scalar-sidebar-search-color: rgba(255, 255, 255, 0.5);
-      }
-
-      /* OpenSearch Dark Mode */
-      .dark-mode {
-        --scalar-color-1: rgba(255, 255, 255, 0.9);
-        --scalar-color-2: rgba(255, 255, 255, 0.55);
-        --scalar-color-3: rgba(255, 255, 255, 0.35);
-        --scalar-color-accent: #00a3e0;
-        --scalar-background-1: #0d1b2a;
-        --scalar-background-2: #132238;
-        --scalar-background-3: #1a2d47;
-        --scalar-background-accent: rgba(0, 163, 224, 0.1);
-        --scalar-border-color: rgba(255, 255, 255, 0.08);
-      }
-      .dark-mode .sidebar {
-        --scalar-sidebar-background-1: #091521;
-        --scalar-sidebar-item-hover-color: #ffffff;
-        --scalar-sidebar-item-hover-background: rgba(255, 255, 255, 0.05);
-        --scalar-sidebar-item-active-background: rgba(0, 163, 224, 0.15);
-        --scalar-sidebar-border-color: rgba(255, 255, 255, 0.06);
-        --scalar-sidebar-color-1: rgba(255, 255, 255, 0.85);
-        --scalar-sidebar-color-2: rgba(255, 255, 255, 0.5);
-        --scalar-sidebar-color-active: #00a3e0;
-        --scalar-sidebar-search-background: rgba(255, 255, 255, 0.06);
-        --scalar-sidebar-search-border-color: rgba(255, 255, 255, 0.08);
-        --scalar-sidebar-search-color: rgba(255, 255, 255, 0.35);
-      }
-
-      /* HTTP method badge colors — docs.opensearch.org palette */
-      .light-mode {
-        --scalar-color-green: #0055a6;
-        --scalar-color-blue: #005eb8;
-        --scalar-color-orange: #ef6c00;
-        --scalar-color-red: #c62828;
-      }
-      .dark-mode {
-        --scalar-color-green: #00a3e0;
-        --scalar-color-blue: #46bde9;
-        --scalar-color-orange: #ffa040;
-        --scalar-color-red: #ef5350;
-      }
-
-      /* ============================================================
-         AWS Documentation style — applied ONLY when body.aws-style
-         is set (dist = aos | aoss). OSS keeps the OpenSearch theme
-         above. Palette: Squid Ink #232F3E nav, AWS Orange #FF9900 /
-         #EC7211 accents, Amazon Ember typography, 2px sharp corners.
-         Scoped selectors override the OpenSearch defaults on cascade.
-         ============================================================ */
-      body.aws-style .light-mode {
-        --scalar-color-1: #16191f;
-        --scalar-color-2: #545b64;
-        --scalar-color-3: #879596;
-        --scalar-color-accent: #EC7211;
-        --scalar-background-1: #ffffff;
-        --scalar-background-2: #fafafa;
-        --scalar-background-3: #f2f3f3;
-        --scalar-background-accent: rgba(236, 114, 17, 0.08);
-        --scalar-border-color: #d5dbdb;
-        --scalar-radius: 2px;
-        --scalar-radius-lg: 2px;
-        --scalar-font: "Amazon Ember", "Helvetica Neue", Helvetica, Arial, sans-serif;
-        /* HTTP method badge colors — AWS palette */
-        --scalar-color-green: #1d8102;
-        --scalar-color-blue: #0073bb;
-        --scalar-color-orange: #EC7211;
-        --scalar-color-red: #d13212;
-      }
-      body.aws-style .light-mode .sidebar {
-        --scalar-sidebar-background-1: #232F3E;
-        --scalar-sidebar-item-hover-color: #ffffff;
-        --scalar-sidebar-item-hover-background: rgba(255,255,255,0.08);
-        --scalar-sidebar-item-active-background: #FF9900;
-        --scalar-sidebar-color-active: #232F3E;
-        --scalar-sidebar-border-color: rgba(255,255,255,0.08);
-        --scalar-sidebar-color-1: rgba(255,255,255,0.92);
-        --scalar-sidebar-color-2: rgba(255,255,255,0.65);
-        --scalar-sidebar-search-background: rgba(255,255,255,0.08);
-        --scalar-sidebar-search-border-color: rgba(255,255,255,0.15);
-        --scalar-sidebar-search-color: rgba(255,255,255,0.6);
-      }
+      /* Page chrome only (banner + back-to-top). The per-distribution
+         Scalar themes live in each configuration's `customCss` below, so
+         Scalar applies the right palette to whichever document is active. */
 
       /* Distribution banner — mimics Scalar's custom-header layout
-         (sandbox/CodePen "Scalar Custom Header Example"): fixed height,
-         sticky, space-between, inset bottom hairline. Colors are pinned
-         to the docs.opensearch.org light palette (NOT theme vars), so the
-         banner stays light in every theme. */
+         (CodePen "Scalar Custom Header Example"): fixed height, sticky,
+         space-between, inset bottom hairline. Colors are pinned to the
+         docs.opensearch.org light palette (NOT theme vars), so the banner
+         stays light in every theme. */
       :root { --scalar-custom-header-height: 50px; }
       .os-dist-banner {
         height: var(--scalar-custom-header-height);
@@ -147,48 +39,7 @@
         z-index: 100;
       }
       .os-dist-banner .title { font-weight: 500; }
-      .os-dist-banner .switcher-group {
-        display: flex; align-items: center; gap: 8px; margin-left: auto;
-      }
-      .os-dist-banner .switcher-label {
-        font-size: 11px; opacity: 0.6;
-      }
-      .os-dist-banner select {
-        appearance: none; -webkit-appearance: none;
-        background: rgba(0,59,92,0.04) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(0,59,92,0.6)'/%3E%3C/svg%3E") no-repeat right 8px center;
-        border: 1px solid rgba(0,59,92,0.25); border-radius: 4px;
-        color: #003b5c; font-size: 12px; font-weight: 500; font-family: inherit;
-        padding: 4px 24px 4px 10px; cursor: pointer; outline: none;
-        transition: border-color 0.15s, background-color 0.15s;
-      }
-      .os-dist-banner select:hover {
-        border-color: rgba(0,59,92,0.5); background-color: rgba(0,59,92,0.08);
-      }
-      .os-dist-banner select:focus {
-        border-color: #0055a6;
-      }
-      .os-dist-banner select option {
-        background: #ffffff; color: #003b5c;
-      }
-
-      /* AWS-style banner overrides (dist = aos | aoss) */
-      body.aws-style .os-dist-banner {
-        background: #232F3E;
-        border-bottom: 3px solid #FF9900;
-        box-shadow: none;
-        color: #fff;
-        font-family: "Amazon Ember", "Helvetica Neue", Helvetica, Arial, sans-serif;
-      }
-      body.aws-style .os-dist-banner select {
-        background-color: rgba(255,255,255,0.1);
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(255,255,255,0.7)'/%3E%3C/svg%3E");
-        border-color: rgba(255,255,255,0.25);
-        color: #fff;
-      }
-      body.aws-style .os-dist-banner select:focus { border-color: #FF9900; }
-      body.aws-style .os-dist-banner select option { background: #232F3E; color: #fff; }
-      body.aws-style .top-link { background: #232F3E; }
-      body.aws-style .top-link:hover { background: #EC7211; }
+      .os-dist-banner img { height: 22px; width: auto; flex-shrink: 0; }
 
       /* Back to top — docs.opensearch.org top-link */
       .top-link {
@@ -227,115 +78,137 @@
     <a class="top-link" id="top-link" href="#top" onclick="event.preventDefault();window.scrollTo({top:0,behavior:'smooth'})" title="Back to top" aria-label="Back to top">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
     </a>
-    <!-- Distribution banner -->
-    <div class="os-dist-banner" id="dist-banner"></div>
+    <!-- Static banner (Scalar's own document switcher handles OSS/AOS/AOSS) -->
+    <div class="os-dist-banner">
+      <img src="https://opensearch.org/wp-content/uploads/2024/08/opensearch_logo_default.svg" alt="OpenSearch" />
+      <span class="title">API Reference</span>
+    </div>
     <!-- Scalar renders here -->
     <div id="app"></div>
 
-    <script>
-      // Determine distribution from URL
-      const params = new URLSearchParams(window.location.search);
-      const dist = params.get('dist') || 'oss';
-
-      const configs = {
-        oss:  { label: 'OpenSearch (OSS)', spec: 'build/opensearch-openapi-oss-tagged.json' },
-        aos:  { label: 'Amazon OpenSearch Service', spec: 'build/opensearch-openapi-aos-tagged.json' },
-        aoss: { label: 'Amazon OpenSearch Serverless', spec: 'build/opensearch-openapi-aoss-tagged.json' },
-      };
-      const cfg = configs[dist] || configs.oss;
-      document.title = `OpenSearch API — ${cfg.label}`;
-
-      // AWS-style chrome for the Amazon distributions (aos, aoss);
-      // OSS keeps the OpenSearch theme.
-      const isAws = dist === 'aos' || dist === 'aoss';
-      if (isAws) document.body.classList.add('aws-style');
-
-      const switcherHtml = `
-        <div class="switcher-group">
-          <span class="switcher-label">Distribution:</span>
-          <select onchange="window.location.href='index.html?dist='+this.value">
-            <option value="oss" ${dist === 'oss' ? 'selected' : ''}>OpenSearch (OSS)</option>
-            <option value="aos" ${dist === 'aos' ? 'selected' : ''}>Amazon OpenSearch Service</option>
-            <option value="aoss" ${dist === 'aoss' ? 'selected' : ''}>Amazon OpenSearch Serverless</option>
-          </select>
-        </div>`;
-
-      // Render banner
-      if (isAws) {
-        // AWS docs style: wordmark with orange service accent, no logo mark
-        const service = dist === 'aoss' ? 'Serverless' : 'Service';
-        document.getElementById('dist-banner').innerHTML = `
-          <span class="title" style="font-weight:700;letter-spacing:.2px">Amazon OpenSearch <span style="color:#FF9900">${service}</span></span>
-          <span class="title" style="font-weight:400;opacity:.6;font-size:12px">API Reference</span>
-          ${switcherHtml}
-        `;
-      } else {
-        document.getElementById('dist-banner').innerHTML = `
-          <img src="https://opensearch.org/wp-content/uploads/2024/08/opensearch_logo_default.svg" alt="OpenSearch" style="height:22px;width:auto;flex-shrink:0" />
-          <span class="title">API Reference</span>
-          ${switcherHtml}
-        `;
-      }
-    </script>
-
     <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
     <script>
-      // The banner deliberately stays light in all themes; it does not track
-      // Scalar's dark/light toggle (the content theme still switches freely).
-
       // Back to top visibility
       window.addEventListener('scroll', () => {
         document.getElementById('top-link').classList.toggle('visible', window.scrollY > 400);
       });
 
-      Scalar.createApiReference('#app', {
-        url: cfg.spec,
+      // Options shared by every distribution configuration.
+      const base = {
         theme: 'none',
         layout: 'modern',
         tagsSorter: 'alpha',
-
-        // Appearance
         darkMode: false,
         favicon: 'favicon.ico',
-
-        // Sidebar
         showSidebar: true,
         operationTitleSource: 'path',
         defaultOpenFirstTag: true,
         defaultOpenAllTags: false,
-
-        // Content display
         hideModels: true,
         expandAllResponses: true,
         orderSchemaPropertiesBy: 'preserve',
-
-        // Hide interactive features (read-only docs)
         showDeveloperTools: 'never',
         hideTestRequestButton: true,
         hideClientButton: true,
         agent: { disabled: true },
         mcp: { disabled: true, name: '', url: '' },
-
-        // Download
         hideDownloadButton: false,
         documentDownloadType: 'both',
-
-        // Code examples: show all client languages, default to curl
         searchHotKey: 'k',
-        defaultHttpClient: {
-          targetKey: 'shell',
-          clientKey: 'curl',
-        },
+        defaultHttpClient: { targetKey: 'shell', clientKey: 'curl' },
         hiddenClients: [],
-
-        // Privacy
         telemetry: false,
+      };
 
-        metaData: {
-          title: 'OpenSearch API Reference',
-          description: 'OpenSearch REST API documentation for OSS, AOS, and AOSS distributions',
-        },
-      })
+      // OpenSearch (OSS) palette — docs.opensearch.org: navy sidebar,
+      // link #0055A6, secondary accent #00a3e0.
+      const openSearchCss = `
+        .light-mode {
+          --scalar-font: "Open Sans", "Segoe UI", Tahoma, sans-serif;
+          --scalar-color-1: #002a3a;
+          --scalar-color-2: rgba(0, 59, 92, 0.7);
+          --scalar-color-3: rgba(0, 59, 92, 0.45);
+          --scalar-color-accent: #0055a6;
+          --scalar-background-1: #ffffff;
+          --scalar-background-2: #f5f7f7;
+          --scalar-background-3: #eef1f6;
+          --scalar-background-accent: rgba(0, 85, 166, 0.08);
+          --scalar-border-color: rgba(0, 59, 92, 0.1);
+          --scalar-color-green: #0055a6;
+          --scalar-color-blue: #005eb8;
+          --scalar-color-orange: #ef6c00;
+          --scalar-color-red: #c62828;
+        }
+        .light-mode .sidebar {
+          --scalar-sidebar-background-1: #003b5c;
+          --scalar-sidebar-item-hover-color: #ffffff;
+          --scalar-sidebar-item-hover-background: rgba(255, 255, 255, 0.1);
+          --scalar-sidebar-item-active-background: rgba(0, 163, 224, 0.3);
+          --scalar-sidebar-border-color: rgba(255, 255, 255, 0.1);
+          --scalar-sidebar-color-1: rgba(255, 255, 255, 0.95);
+          --scalar-sidebar-color-2: rgba(255, 255, 255, 0.7);
+          --scalar-sidebar-color-active: #ffffff;
+          --scalar-sidebar-search-background: rgba(255, 255, 255, 0.1);
+          --scalar-sidebar-search-border-color: rgba(255, 255, 255, 0.15);
+          --scalar-sidebar-search-color: rgba(255, 255, 255, 0.5);
+        }
+        .dark-mode {
+          --scalar-font: "Open Sans", "Segoe UI", Tahoma, sans-serif;
+          --scalar-color-1: rgba(255, 255, 255, 0.9);
+          --scalar-color-2: rgba(255, 255, 255, 0.55);
+          --scalar-color-3: rgba(255, 255, 255, 0.35);
+          --scalar-color-accent: #00a3e0;
+          --scalar-background-1: #0d1b2a;
+          --scalar-background-2: #132238;
+          --scalar-background-3: #1a2d47;
+          --scalar-background-accent: rgba(0, 163, 224, 0.1);
+          --scalar-border-color: rgba(255, 255, 255, 0.08);
+          --scalar-color-green: #00a3e0;
+          --scalar-color-blue: #46bde9;
+          --scalar-color-orange: #ffa040;
+          --scalar-color-red: #ef5350;
+        }
+        .dark-mode .sidebar {
+          --scalar-sidebar-background-1: #091521;
+          --scalar-sidebar-item-hover-color: #ffffff;
+          --scalar-sidebar-item-hover-background: rgba(255, 255, 255, 0.05);
+          --scalar-sidebar-item-active-background: rgba(0, 163, 224, 0.15);
+          --scalar-sidebar-border-color: rgba(255, 255, 255, 0.06);
+          --scalar-sidebar-color-1: rgba(255, 255, 255, 0.85);
+          --scalar-sidebar-color-2: rgba(255, 255, 255, 0.5);
+          --scalar-sidebar-color-active: #00a3e0;
+          --scalar-sidebar-search-background: rgba(255, 255, 255, 0.06);
+          --scalar-sidebar-search-border-color: rgba(255, 255, 255, 0.08);
+          --scalar-sidebar-search-color: rgba(255, 255, 255, 0.35);
+        }
+      `;
+
+      // AWS palette removed: Scalar injects config-level customCss globally
+      // (no per-active-config scoping hook exists), so per-distribution
+      // themes collide. All distributions share the OpenSearch theme; the
+      // native document switcher moves between them without a reload.
+      Scalar.createApiReference('#app', {
+        ...base,
+        customCss: openSearchCss,
+        sources: [
+          {
+            slug: 'oss',
+            title: 'OpenSearch (OSS)',
+            url: 'build/opensearch-openapi-oss-tagged.json',
+            default: true,
+          },
+          {
+            slug: 'aos',
+            title: 'Amazon OpenSearch Service',
+            url: 'build/opensearch-openapi-aos-tagged.json',
+          },
+          {
+            slug: 'aoss',
+            title: 'Amazon OpenSearch Serverless',
+            url: 'build/opensearch-openapi-aoss-tagged.json',
+          },
+        ],
+      });
     </script>
 </body>
 </html>
