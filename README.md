@@ -54,6 +54,14 @@ build/                        generated output (git-tracked; the site loads *-ta
 npm run build                     # == ./tools/build-distribution-specs.sh
 ```
 
+The base spec is the **committed, tagged** `spec/opensearch-openapi.yaml` — the
+repo owns it, so the build is deterministic and the Scalar sidebar grouping
+(driven by operation `tags`) is guaranteed. The build does **not** fetch upstream
+by default: the live `api-spec.opensearch.org` base is still untagged (the
+upstream tags PR is not merged), so fetching it would strip the grouping. Once
+upstream carries tags, run `REFRESH_BASE=1 npm run build` to pull a fresh base
+and overwrite the committed spec.
+
 All overlays are applied with the **speakeasy overlay CLI** (a single tool for
 the whole pipeline). speakeasy supports `$ref` filter predicates, which the
 previously-used `openapi-overlays-js` rejected; standardizing on it removes the
