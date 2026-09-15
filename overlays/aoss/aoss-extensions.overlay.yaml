@@ -31,15 +31,12 @@ actions:
   - target: "$.components.schemas['indices._common___IndexSettings'].properties"
     update:
       data.retention:
-        x-distributions: [amazon-serverless]
         $ref: '#/components/schemas/_common___Duration'
         description: 'AOSS-only. Data-retention period for a V2 index (duration, e.g. `7d`).'
       warm.after:
-        x-distributions: [amazon-serverless]
         $ref: '#/components/schemas/_common___Duration'
         description: 'AOSS-only. Age after which an index migrates hot -> warm (duration, e.g. `30d`).'
       timestamp_field:
-        x-distributions: [amazon-serverless]
         $ref: '#/components/schemas/_common___Field'
         description: 'AOSS-only. Document field holding the event timestamp that drives time-based lifecycle.'
 
@@ -47,12 +44,10 @@ actions:
   - target: "$.components.requestBodies['snapshot.restore'].content['application/json'].schema.properties"
     update:
       sourceCollectionId:
-        x-distributions: [amazon-serverless]
         type: string
         pattern: '^[a-z0-9]{3,40}$'
         description: 'AOSS-only. Source collection to restore from (cross-collection restore); requires the CCR feature flag. Omit to restore from the same collection.'
       allow_regex:
-        x-distributions: [amazon-serverless]
         type: boolean
         default: false
         description: 'AOSS-only. When true, rename_pattern/replacement use Java regex with capture groups (e.g. $1); false = plain strings (OSS behaviour).'
@@ -60,13 +55,11 @@ actions:
     update:
       requestBody:
         required: false
-        x-distributions: [amazon-serverless]
         description: 'AOSS-only. Scopes snapshot listing to a source collection for CCR preflight.'
         content:
           application/json:
             schema:
               type: object
-              x-distributions: [amazon-serverless]
               properties:
                 sourceCollectionId:
                   type: string
