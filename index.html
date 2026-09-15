@@ -132,11 +132,12 @@
         --scalar-sidebar-search-color: rgba(255,255,255,0.6);
       }
 
-      /* Distribution banner */
+      /* Distribution banner — docs.opensearch.org light header style:
+         pale blue background, full-color logo, navy text. */
       .os-dist-banner {
-        background: #003b5c;
-        color: #fff;
-        padding: 6px 20px;
+        background: #e1f0f9;
+        color: #003b5c;
+        padding: 10px 20px;
         font-size: 13px;
         display: flex;
         align-items: center;
@@ -145,6 +146,7 @@
         z-index: 1000;
         position: sticky;
         top: 0;
+        border-bottom: 1px solid rgba(0, 59, 92, 0.12);
       }
       .os-dist-banner svg { height: 22px; width: 22px; flex-shrink: 0; }
       .os-dist-banner .title { font-weight: 500; }
@@ -163,35 +165,42 @@
       }
       .os-dist-banner select {
         appearance: none; -webkit-appearance: none;
-        background: rgba(255,255,255,0.1) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(255,255,255,0.7)'/%3E%3C/svg%3E") no-repeat right 8px center;
-        border: 1px solid rgba(255,255,255,0.25); border-radius: 4px;
-        color: #fff; font-size: 12px; font-weight: 500; font-family: inherit;
+        background: rgba(0,59,92,0.04) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(0,59,92,0.6)'/%3E%3C/svg%3E") no-repeat right 8px center;
+        border: 1px solid rgba(0,59,92,0.25); border-radius: 4px;
+        color: #003b5c; font-size: 12px; font-weight: 500; font-family: inherit;
         padding: 4px 24px 4px 10px; cursor: pointer; outline: none;
         transition: border-color 0.15s, background-color 0.15s;
       }
       .os-dist-banner select:hover {
-        border-color: rgba(255,255,255,0.5); background-color: rgba(255,255,255,0.15);
+        border-color: rgba(0,59,92,0.5); background-color: rgba(0,59,92,0.08);
       }
       .os-dist-banner select:focus {
         border-color: #0055a6;
       }
       .os-dist-banner select option {
-        background: #003b5c; color: #fff;
+        background: #ffffff; color: #003b5c;
       }
 
       /* AWS-style banner overrides (dist = aos | aoss) */
       body.aws-style .os-dist-banner {
         background: #232F3E;
         border-bottom: 3px solid #FF9900;
+        color: #fff;
         font-family: "Amazon Ember", "Helvetica Neue", Helvetica, Arial, sans-serif;
       }
+      body.aws-style .os-dist-banner select {
+        background-color: rgba(255,255,255,0.1);
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(255,255,255,0.7)'/%3E%3C/svg%3E");
+        border-color: rgba(255,255,255,0.25);
+        color: #fff;
+      }
       body.aws-style .os-dist-banner select:focus { border-color: #FF9900; }
-      body.aws-style .os-dist-banner select option { background: #232F3E; }
-      body.aws-style .back-to-top { background: #232F3E; }
-      body.aws-style .back-to-top:hover { background: #EC7211; }
+      body.aws-style .os-dist-banner select option { background: #232F3E; color: #fff; }
+      body.aws-style .top-link { background: #232F3E; }
+      body.aws-style .top-link:hover { background: #EC7211; }
 
-      /* Back to top button */
-      .back-to-top {
+      /* Back to top — docs.opensearch.org top-link */
+      .top-link {
         position: fixed;
         bottom: 24px;
         right: 24px;
@@ -202,28 +211,31 @@
         color: #fff;
         border: none;
         cursor: pointer;
-        font-size: 18px;
-        line-height: 36px;
-        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
         box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         opacity: 0;
         pointer-events: none;
         transition: none;
         z-index: 999;
       }
-      .back-to-top.visible {
+      .top-link.visible {
         opacity: 0.8;
         pointer-events: auto;
       }
-      .back-to-top:hover {
+      .top-link:hover {
         opacity: 1;
         background: #0055a6;
       }
     </style>
 </head>
 <body>
-    <!-- Back to top -->
-    <button class="back-to-top" id="back-to-top" onclick="window.scrollTo(0,0)" title="Back to top">&#8593;</button>
+    <!-- Back to top — docs.opensearch.org top-link pattern -->
+    <a class="top-link" id="top-link" href="#top" onclick="event.preventDefault();window.scrollTo({top:0,behavior:'smooth'})" title="Back to top" aria-label="Back to top">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+    </a>
     <!-- Distribution banner -->
     <div class="os-dist-banner" id="dist-banner"></div>
     <!-- Scalar renders here -->
@@ -268,12 +280,8 @@
         `;
       } else {
         document.getElementById('dist-banner').innerHTML = `
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="45" cy="45" r="35" fill="none" stroke="#0a7b8f" stroke-width="8"/>
-            <circle cx="45" cy="45" r="14" fill="#0a7b8f"/>
-            <line x1="70" y1="70" x2="92" y2="92" stroke="#ef6c00" stroke-width="10" stroke-linecap="round"/>
-          </svg>
-          <span class="title">OpenSearch API Reference</span>
+          <img src="https://opensearch.org/wp-content/uploads/2024/08/opensearch_logo_default.svg" alt="OpenSearch" style="height:22px;width:auto;flex-shrink:0" />
+          <span class="title">API Reference</span>
           ${switcherHtml}
         `;
       }
@@ -283,13 +291,14 @@
     <script>
       // Back to top visibility
       window.addEventListener('scroll', () => {
-        document.getElementById('back-to-top').classList.toggle('visible', window.scrollY > 400);
+        document.getElementById('top-link').classList.toggle('visible', window.scrollY > 400);
       });
 
       Scalar.createApiReference('#app', {
         url: cfg.spec,
         theme: 'none',
         layout: 'modern',
+        tagsSorter: 'alpha',
 
         // Appearance
         darkMode: false,
