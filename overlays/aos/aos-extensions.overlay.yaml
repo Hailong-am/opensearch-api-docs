@@ -43,6 +43,8 @@ actions:
         post:
           operationId: ultrawarm.migrate_to_warm.0
           x-operation-group: ultrawarm.migrate_to_warm
+          tags:
+            - UltraWarm
           x-distributions:
             - amazon-managed
           x-version-added: '7.1'
@@ -74,6 +76,8 @@ actions:
         post:
           operationId: ultrawarm.migrate_to_hot.0
           x-operation-group: ultrawarm.migrate_to_hot
+          tags:
+            - UltraWarm
           x-distributions:
             - amazon-managed
           x-version-added: '7.1'
@@ -104,6 +108,8 @@ actions:
         post:
           operationId: ultrawarm.migrate_to_cold.0
           x-operation-group: ultrawarm.migrate_to_cold
+          tags:
+            - UltraWarm
           x-distributions:
             - amazon-managed
           x-version-added: '7.10'
@@ -134,6 +140,8 @@ actions:
         post:
           operationId: ultrawarm.cancel_migration.0
           x-operation-group: ultrawarm.cancel_migration
+          tags:
+            - UltraWarm
           x-distributions:
             - amazon-managed
           x-version-added: '7.1'
@@ -163,6 +171,8 @@ actions:
         get:
           operationId: ultrawarm.get_migration_status.0
           x-operation-group: ultrawarm.get_migration_status
+          tags:
+            - UltraWarm
           x-distributions:
             - amazon-managed
           x-version-added: '7.1'
@@ -192,6 +202,8 @@ actions:
         get:
           operationId: ultrawarm.list_migration_status.0
           x-operation-group: ultrawarm.list_migration_status
+          tags:
+            - UltraWarm
           x-distributions:
             - amazon-managed
           x-version-added: '7.1'
@@ -220,6 +232,8 @@ actions:
         put:
           operationId: ultrawarm.update_migration.0
           x-operation-group: ultrawarm.update_migration
+          tags:
+            - UltraWarm
           x-distributions:
             - amazon-managed
           x-version-added: '7.1'
@@ -254,6 +268,8 @@ actions:
         post:
           operationId: cold.migrate_to_cold
           x-operation-group: cold.migrate_to_cold
+          tags:
+            - Cold Tier
           x-distributions:
             - amazon-managed
           x-version-added: '1.0'
@@ -274,6 +290,8 @@ actions:
         post:
           operationId: cold.migrate_to_warm
           x-operation-group: cold.migrate_to_warm
+          tags:
+            - Cold Tier
           x-distributions:
             - amazon-managed
           x-version-added: '1.0'
@@ -294,6 +312,8 @@ actions:
         post:
           operationId: cold.cancel_migration
           x-operation-group: cold.cancel_migration
+          tags:
+            - Cold Tier
           x-distributions:
             - amazon-managed
           x-version-added: '1.0'
@@ -314,6 +334,8 @@ actions:
         get:
           operationId: cold.get_migration_status
           x-operation-group: cold.get_migration_status
+          tags:
+            - Cold Tier
           x-distributions:
             - amazon-managed
           x-version-added: '1.0'
@@ -334,6 +356,8 @@ actions:
         get:
           operationId: cold.list_migration_status
           x-operation-group: cold.list_migration_status
+          tags:
+            - Cold Tier
           x-distributions:
             - amazon-managed
           x-version-added: '1.0'
@@ -352,6 +376,8 @@ actions:
         post:
           operationId: cold.search
           x-operation-group: cold.search
+          tags:
+            - Cold Tier
           x-distributions:
             - amazon-managed
           x-version-added: '1.0'
@@ -372,6 +398,8 @@ actions:
         get:
           operationId: cold.catalog
           x-operation-group: cold.catalog
+          tags:
+            - Cold Tier
           x-distributions:
             - amazon-managed
           x-version-added: '1.0'

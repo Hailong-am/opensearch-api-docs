@@ -74,10 +74,6 @@ jobs:
           cp build/opensearch-openapi-oss-tagged.json  _site/build/
           cp build/opensearch-openapi-aos-tagged.json  _site/build/
           cp build/opensearch-openapi-aoss-tagged.json _site/build/
-          # keep the -clean.json intermediates too (they are referenced/diffable)
-          cp build/opensearch-openapi-oss-clean.json  _site/build/ 2>/dev/null || true
-          cp build/opensearch-openapi-aos-clean.json  _site/build/ 2>/dev/null || true
-          cp build/opensearch-openapi-aoss-clean.json _site/build/ 2>/dev/null || true
           echo "Assembled site:"; find _site -type f | sort
 
       - name: Publish to gh-pages

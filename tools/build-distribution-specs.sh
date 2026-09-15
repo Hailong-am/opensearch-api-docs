@@ -12,7 +12,8 @@
 #   - AOSS overlays:      overlays/aoss/amazon-serverless-allowlist.overlay.yaml (GENERATED allowlist),
 #                         overlays/aoss/aoss-extensions.overlay.yaml (hand-authored, merged: snapshot + index
 #                         lifecycle additions, unsettable-settings + refresh removals)
-#   - Tools:               tools/inject-tags.py, tools/strip-deprecated.py
+#   - Tools:               tools/strip-deprecated.py (tags come from the base
+#                          spec + the AOS extension overlay; no tag-injection pass)
 #
 # All local paths are repo-relative. No home-dir dependencies. No ad-hoc JSON edits.
 #
@@ -133,16 +134,14 @@ for name in ['opensearch-openapi-oss', 'opensearch-openapi-aos-full', 'opensearc
 "
 
 echo ""
-echo "--- Strip deprecated ---"
-python3 "$TOOLS_DIR/strip-deprecated.py" "$BUILD_DIR/opensearch-openapi-oss.json"       "$BUILD_DIR/opensearch-openapi-oss-clean.json"
-python3 "$TOOLS_DIR/strip-deprecated.py" "$BUILD_DIR/opensearch-openapi-aos-full.json"  "$BUILD_DIR/opensearch-openapi-aos-clean.json"
-python3 "$TOOLS_DIR/strip-deprecated.py" "$BUILD_DIR/opensearch-openapi-aoss-full.json" "$BUILD_DIR/opensearch-openapi-aoss-clean.json" --no-version
-
-echo ""
-echo "--- Inject tags ---"
-python3 "$TOOLS_DIR/inject-tags.py" "$BUILD_DIR/opensearch-openapi-oss-clean.json"  "$BUILD_DIR/opensearch-openapi-oss-tagged.json"
-python3 "$TOOLS_DIR/inject-tags.py" "$BUILD_DIR/opensearch-openapi-aos-clean.json"  "$BUILD_DIR/opensearch-openapi-aos-tagged.json"
-python3 "$TOOLS_DIR/inject-tags.py" "$BUILD_DIR/opensearch-openapi-aoss-clean.json" "$BUILD_DIR/opensearch-openapi-aoss-tagged.json"
+echo "--- Strip deprecated (final render targets) ---"
+# Tags now live in the base spec (upstream opensearch-api-specification carries
+# operation-level tags on every operation) and in the AOS extension overlay
+# (UltraWarm / Cold Tier ops tagged inline). No separate tag-injection pass is
+# needed -- strip-deprecated writes the final *-tagged.json that index.html loads.
+python3 "$TOOLS_DIR/strip-deprecated.py" "$BUILD_DIR/opensearch-openapi-oss.json"       "$BUILD_DIR/opensearch-openapi-oss-tagged.json"
+python3 "$TOOLS_DIR/strip-deprecated.py" "$BUILD_DIR/opensearch-openapi-aos-full.json"  "$BUILD_DIR/opensearch-openapi-aos-tagged.json"
+python3 "$TOOLS_DIR/strip-deprecated.py" "$BUILD_DIR/opensearch-openapi-aoss-full.json" "$BUILD_DIR/opensearch-openapi-aoss-tagged.json" --no-version
 
 echo ""
 echo "=== Done ==="

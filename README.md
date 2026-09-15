@@ -45,7 +45,6 @@ tools/
                                + current base; hard invariant: every allowlist row must match
                                a base path. CI gates `regenerate && git diff --exit-code`.
   strip-deprecated.py          removes deprecated ops, injects "Minimum version"
-  inject-tags.py               maps x-operation-group prefixes to Scalar sidebar groups
 build/                        generated output (git-tracked; the site loads *-tagged.json)
 ```
 
@@ -68,12 +67,15 @@ Pipeline per distribution:
 spec/opensearch-openapi.yaml
   ──apply blocklist / allowlist + extension overlays (speakeasy)──▶  *-full.yaml
   ──YAML→JSON──▶  *.json
-  ──strip-deprecated.py──▶  *-clean.json
-  ──inject-tags.py──▶  *-tagged.json   ◀── index.html loads this
+  ──strip-deprecated.py──▶  *-tagged.json   ◀── index.html loads this
 ```
 
 The `*-tagged.json` files carry the `tags` metadata Scalar uses for the grouped
-left-hand navigation. `*-clean.json` is the pre-tagging intermediate.
+left-hand navigation. Tags are no longer injected at build time: the upstream
+base spec (`spec/opensearch-openapi.yaml`) already carries operation-level
+`tags` on every operation, and the AOS extension overlay tags its added
+UltraWarm / Cold Tier operations inline. `strip-deprecated.py` preserves those
+tags, so its output is the final render target.
 
 ## Deploy
 
