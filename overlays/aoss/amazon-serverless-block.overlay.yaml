@@ -863,3 +863,23 @@ actions:
   remove: true
 - target: $.paths['/{index}/ingestion/_state']
   remove: true
+- target: $.paths['/_alias'].put
+  remove: true
+- target: $.paths['/_alias/{name}'].post
+  remove: true
+- target: $.paths['/_alias/{name}'].put
+  remove: true
+- target: $.paths['/_bulk'].put
+  remove: true
+- target: $.paths['/_snapshot/{repository}/{snapshot}'].delete
+  remove: true
+- target: $.paths['/_snapshot/{repository}/{snapshot}'].post
+  remove: true
+- target: $.paths['/_snapshot/{repository}/{snapshot}'].put
+  remove: true
+- target: $.paths['/{index}/_alias'].put
+  remove: true
+- target: $.paths['/{index}/_bulk'].put
+  remove: true
+- target: $.paths['/{index}/_doc/{id}'].post
+  remove: true
