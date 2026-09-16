@@ -18,72 +18,51 @@
          Scalar themes live in each configuration's `customCss` below, so
          Scalar applies the right palette to whichever document is active. */
 
-      /* Distribution banner — mimics Scalar's custom-header layout
-         (CodePen "Scalar Custom Header Example"): fixed height, sticky,
-         space-between, inset bottom hairline. Light by default; the
-         body.banner-dark rules below darken it in lockstep with Scalar's
-         theme (mirrored by the MutationObserver in the script). */
+      /* Distribution banner — Scalar custom-header pattern (CodePen
+         "Scalar Custom Header Example"). The banner carries the `scalar-app`
+         class, so it lives in Scalar's theme scope and inherits the active
+         theme's CSS variables — it darkens/lightens natively with Scalar, no
+         JS color-mirroring needed. Layout: fixed height, sticky, inset
+         bottom hairline. */
       :root { --scalar-custom-header-height: 50px; }
       .os-dist-banner {
         height: var(--scalar-custom-header-height);
-        background: #e1f0f9;
-        color: #003b5c;
-        box-shadow: inset 0 -1px 0 rgba(0, 59, 92, 0.12);
+        background: var(--scalar-background-1);
+        color: var(--scalar-color-1);
+        box-shadow: inset 0 -1px 0 var(--scalar-border-color);
         font-size: 13px;
         padding: 0 18px;
         display: flex;
         align-items: center;
-        justify-content: space-between;
         gap: 18px;
-        font-family: "Open Sans", "Segoe UI", Tahoma, sans-serif;
         position: sticky;
         top: 0;
         z-index: 100;
       }
-      .os-dist-banner .title { font-weight: 500; }
+      .os-dist-banner .title { font-weight: 500; color: var(--scalar-color-2); }
       .os-dist-banner img { height: 22px; width: auto; flex-shrink: 0; }
+      /* Logo is a fixed-color SVG; invert it to stay legible on the dark
+         banner background. (A logo can't follow a CSS color variable.) */
+      body.banner-dark .os-dist-banner img { filter: brightness(0) invert(1); }
       .os-dist-banner .brand-divider {
-        width: 1px; height: 20px; background: rgba(0, 59, 92, 0.2); flex-shrink: 0;
+        width: 1px; height: 20px; background: var(--scalar-border-color); flex-shrink: 0;
       }
       /* push the toggle to the right edge */
       .os-dist-banner .theme-toggle { margin-left: auto; }
       .theme-toggle {
         display: inline-flex; align-items: center; justify-content: center;
         width: 30px; height: 30px; padding: 0;
-        background: transparent; border: 1px solid rgba(0, 59, 92, 0.25);
-        border-radius: 6px; color: #003b5c; cursor: pointer;
+        background: transparent; border: 1px solid var(--scalar-border-color);
+        border-radius: 6px; color: var(--scalar-color-2); cursor: pointer;
         transition: background-color 0.15s, border-color 0.15s;
       }
       .theme-toggle:hover {
-        background: rgba(0, 59, 92, 0.08); border-color: rgba(0, 59, 92, 0.5);
+        background: var(--scalar-background-2); border-color: var(--scalar-color-3);
       }
-      /* show sun in light, moon in dark */
+      /* show sun in light, moon in dark (banner-dark tracks Scalar's theme) */
       .theme-toggle .icon-moon { display: none; }
       body.banner-dark .theme-toggle .icon-sun { display: none; }
       body.banner-dark .theme-toggle .icon-moon { display: inline; }
-
-      /* Dark banner — tracks Scalar's theme via body.banner-dark (toggled by
-         the MutationObserver in the script). Matches the OpenSearch dark
-         content palette (#0d1b2a). */
-      body.banner-dark .os-dist-banner {
-        background: #0d1b2a;
-        color: rgba(255, 255, 255, 0.9);
-        box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08);
-      }
-      body.banner-dark .os-dist-banner img {
-        filter: brightness(0) invert(1);
-      }
-      body.banner-dark .os-dist-banner .brand-divider {
-        background: rgba(255, 255, 255, 0.2);
-      }
-      body.banner-dark .theme-toggle {
-        border-color: rgba(255, 255, 255, 0.25);
-        color: rgba(255, 255, 255, 0.9);
-      }
-      body.banner-dark .theme-toggle:hover {
-        background: rgba(255, 255, 255, 0.08);
-        border-color: rgba(255, 255, 255, 0.5);
-      }
 
       /* Back to top — docs.opensearch.org top-link */
       .top-link {
@@ -122,8 +101,10 @@
     <a class="top-link" id="top-link" href="#top" onclick="event.preventDefault();window.scrollTo({top:0,behavior:'smooth'})" title="Back to top" aria-label="Back to top">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
     </a>
-    <!-- Static banner (Scalar's own document switcher handles OSS/AOS/AOSS) -->
-    <div class="os-dist-banner">
+    <!-- Banner carries `scalar-app` so it inherits Scalar's theme variables
+         and darkens/lightens natively. Scalar's own document switcher handles
+         OSS/AOS/AOSS. -->
+    <div class="os-dist-banner scalar-app">
       <img src="https://opensearch.org/wp-content/uploads/2024/08/opensearch_logo_default.svg" alt="OpenSearch" />
       <span class="brand-divider" aria-hidden="true"></span>
       <span class="title">API Reference</span>
@@ -143,12 +124,14 @@
         document.getElementById('top-link').classList.toggle('visible', window.scrollY > 400);
       });
 
-      // Dark/light toggle in the banner. Scalar exposes no theme API, and
-      // flipping the .dark-mode class directly is reverted by Scalar's own
-      // reactive state — so instead we PROXY a click to Scalar's built-in
-      // color-mode toggle (its sidebar switch, button.group/toggle). A
-      // MutationObserver mirrors the resulting theme onto body.banner-dark so
-      // the banner's sun/moon icon stays in sync however the theme changed.
+      // Dark/light toggle in the banner. The banner colors now follow Scalar
+      // natively via the `scalar-app` class + theme variables, so no color
+      // mirroring is needed. Two things still require JS: (1) the button
+      // proxies a click to Scalar's built-in color-mode toggle
+      // (button.group/toggle) because flipping the .dark-mode class directly
+      // is reverted by Scalar's reactive state; (2) a MutationObserver toggles
+      // body.banner-dark purely so the sun/moon ICON swaps and the logo
+      // inverts in step with whatever changed the theme.
       (function () {
         const btn = document.getElementById('theme-toggle');
 
