@@ -4,21 +4,21 @@ info:
   version: 1.0.0
 extends: ./opensearch-openapi.yaml
 
-# Adds the AOS-proprietary storage-tier migration endpoints. None of these paths
+# Adds the storage-tier migration endpoints. None of these paths
 # exist in OSS OpenSearch, and none are available on AOSS -- they are AOS
 # (amazon-managed) ONLY. Every operation, parameter, response, schema, and
 # requestBody added here is marked x-distributions: [amazon-managed].
 #
-# UltraWarm (/_ultrawarm/migration/*) -- SearchServicesESKraken (opensearch-3.7.0):
-#   RestWarmMigrationAction       POST /_ultrawarm/migration/{index}/_warm
-#   RestHotMigrationAction        POST /_ultrawarm/migration/{index}/_hot
-#   RestWarmToColdMigrationAction POST /_ultrawarm/migration/{index}/_cold
-#   RestCancelMigrationAction     POST /_ultrawarm/migration/_cancel/{index}
-#   RestGetMigrationAction        GET  /_ultrawarm/migration/{index}/_status
-#   RestListMigrationsAction      GET  /_ultrawarm/migration/_status
-#   RestUpdateMigrationAction     PUT  /_ultrawarm/migration/{index}
+# UltraWarm (/_ultrawarm/migration/*):
+#   POST /_ultrawarm/migration/{index}/_warm
+#   POST /_ultrawarm/migration/{index}/_hot
+#   POST /_ultrawarm/migration/{index}/_cold
+#   POST /_ultrawarm/migration/_cancel/{index}
+#   GET  /_ultrawarm/migration/{index}/_status
+#   GET  /_ultrawarm/migration/_status
+#   PUT  /_ultrawarm/migration/{index}
 #
-# Cold tier (/_cold/*) -- AOS gap analysis (opensearch-aos-oss-gap.md):
+# Cold tier (/_cold/*):
 #   POST /_cold/migration/{index}/_cold    migrate index to cold tier
 #   POST /_cold/migration/{index}/_warm    migrate cold index back to warm
 #   POST /_cold/migration/_cancel/{index}  cancel cold migration
@@ -28,6 +28,14 @@ extends: ./opensearch-openapi.yaml
 #   GET  /_cold/_catalog                   cold tier catalog
 
 actions:
+  # DEFERRED field-level additions (add once the target schemas exist in the base spec):
+  #   - ISM policy action search_only
+  #   - alerting destination sns (topic_arn, role_arn)
+  #   - ml connector protocol value dns
+  #   - PPL query body params analyze/query_id/partial_result/warnings_supported/highlight
+  #   - flow-framework workflow _search field restrictions
+  #   - neural-search semantic_search_rewrite_processor + semantic_highlighting_batch
+  #   - query-insights top-queries recommendations
 
   # =======================================================================
   # UltraWarm (/_ultrawarm/migration/*)
@@ -666,3 +674,203 @@ actions:
               x-distributions:
                 - amazon-managed
               additionalProperties: true
+
+  # Index tiering status
+  - target: "$.paths"
+    description: Add GET /{index}/_tier (index tiering status)
+    update:
+      "/{index}/_tier":
+        get:
+          operationId: tier.get_status.0
+          x-operation-group: tier.get_status
+          tags:
+            - Tiering
+          description: >-
+            Returns the hot/warm tiering status of an index.
+          parameters:
+            - $ref: '#/components/parameters/tier___path.index'
+            - $ref: '#/components/parameters/_global___query.pretty'
+            - $ref: '#/components/parameters/_global___query.human'
+            - $ref: '#/components/parameters/_global___query.error_trace'
+            - $ref: '#/components/parameters/_global___query.filter_path'
+          responses:
+            '200':
+              $ref: '#/components/responses/tier.get_status___200'
+  - target: "$.paths"
+    description: Add GET /_tier/all (cluster-wide tiering status)
+    update:
+      "/_tier/all":
+        get:
+          operationId: tier.list_status.0
+          x-operation-group: tier.list_status
+          tags:
+            - Tiering
+          description: >-
+            Lists tiering status across all indices.
+          parameters:
+            - $ref: '#/components/parameters/_global___query.pretty'
+            - $ref: '#/components/parameters/_global___query.human'
+            - $ref: '#/components/parameters/_global___query.error_trace'
+            - $ref: '#/components/parameters/_global___query.filter_path'
+          responses:
+            '200':
+              $ref: '#/components/responses/tier.list_status___200'
+
+  # Security API tokens
+  - target: "$.paths"
+    description: Add /_plugins/_security/api/apitokens (create/list)
+    update:
+      "/_plugins/_security/api/apitokens":
+        post:
+          operationId: security.create_api_token.0
+          x-operation-group: security.create_api_token
+          tags:
+            - Security
+          description: Creates a security API token.
+          requestBody:
+            $ref: '#/components/requestBodies/security.create_api_token'
+          responses:
+            '200':
+              $ref: '#/components/responses/security.api_token___200'
+        get:
+          operationId: security.list_api_tokens.0
+          x-operation-group: security.list_api_tokens
+          tags:
+            - Security
+          description: Lists security API tokens.
+          responses:
+            '200':
+              $ref: '#/components/responses/security.api_token___200'
+  - target: "$.paths"
+    description: Add DELETE /_plugins/_security/api/apitokens/{id}
+    update:
+      "/_plugins/_security/api/apitokens/{id}":
+        delete:
+          operationId: security.delete_api_token.0
+          x-operation-group: security.delete_api_token
+          tags:
+            - Security
+          description: Revokes a security API token.
+          parameters:
+            - $ref: '#/components/parameters/security.api_token___path.id'
+          responses:
+            '200':
+              $ref: '#/components/responses/security.api_token___200'
+
+  # Cross-cluster replication -- bulk API
+  # NOTE: only the create POST is added; status/cancel/task-status verbs to follow.
+  - target: "$.paths"
+    description: Add POST /_plugins/_replication/_bulk/{index} (bulk replication)
+    update:
+      "/_plugins/_replication/_bulk/{index}":
+        post:
+          operationId: replication.bulk.0
+          x-operation-group: replication.bulk
+          tags:
+            - Cross-Cluster Replication
+          description: Starts bulk replication for the specified index.
+          parameters:
+            - $ref: '#/components/parameters/replication.bulk___path.index'
+          responses:
+            '200':
+              $ref: '#/components/responses/replication.bulk___200'
+
+  # PPL grammar
+  - target: "$.paths"
+    description: Add GET /_plugins/_ppl/_grammar (PPL grammar)
+    update:
+      "/_plugins/_ppl/_grammar":
+        get:
+          operationId: ppl.grammar.0
+          x-operation-group: ppl.grammar
+          tags:
+            - Query DSL
+          description: Returns the PPL grammar definition.
+          responses:
+            '200':
+              $ref: '#/components/responses/ppl.grammar___200'
+
+  # =======================================================================
+  # COMPONENTS for the endpoint additions above
+  # =======================================================================
+  - target: "$.components.parameters"
+    description: Add path parameters for tiering / security-apitoken / replication-bulk
+    update:
+      tier___path.index:
+        name: index
+        in: path
+        required: true
+        description: The name of the index whose tiering status to return.
+        schema:
+          type: string
+      security.api_token___path.id:
+        name: id
+        in: path
+        required: true
+        description: The id of the API token to revoke.
+        schema:
+          type: string
+      replication.bulk___path.index:
+        name: index
+        in: path
+        required: true
+        description: The name of the index to bulk-replicate.
+        schema:
+          type: string
+  - target: "$.components.requestBodies"
+    description: Add the security API-token create request body
+    update:
+      security.create_api_token:
+        description: API token creation request.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                cluster_permissions:
+                  type: array
+                  items:
+                    type: string
+                index_permissions:
+                  type: array
+                  items:
+                    type: object
+  - target: "$.components.responses"
+    description: Add responses for tiering / security-apitoken / replication-bulk / ppl-grammar
+    update:
+      tier.get_status___200:
+        description: Tiering status for the requested index.
+        content:
+          application/json:
+            schema:
+              type: object
+      tier.list_status___200:
+        description: Tiering status across all indices.
+        content:
+          application/json:
+            schema:
+              type: object
+      security.api_token___200:
+        description: API token operation result.
+        content:
+          application/json:
+            schema:
+              type: object
+      replication.bulk___200:
+        description: Bulk replication accepted.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                acknowledged:
+                  type: boolean
+      ppl.grammar___200:
+        description: PPL grammar definition.
+        content:
+          application/json:
+            schema:
+              type: object
