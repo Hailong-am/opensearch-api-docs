@@ -1,876 +1,145 @@
 overlay: 1.0.0
 info:
-  title: AOS-only API extensions (UltraWarm + Cold tier)
+  title: AOS-only API extensions
   version: 1.0.0
 extends: ./opensearch-openapi.yaml
 
-# Adds the storage-tier migration endpoints. None of these paths
-# exist in OSS OpenSearch, and none are available on AOSS -- they are AOS
-# (amazon-managed) ONLY. Every operation, parameter, response, schema, and
-# requestBody added here is marked x-distributions: [amazon-managed].
-#
-# UltraWarm (/_ultrawarm/migration/*):
-#   POST /_ultrawarm/migration/{index}/_warm
-#   POST /_ultrawarm/migration/{index}/_hot
-#   POST /_ultrawarm/migration/{index}/_cold
-#   POST /_ultrawarm/migration/_cancel/{index}
-#   GET  /_ultrawarm/migration/{index}/_status
-#   GET  /_ultrawarm/migration/_status
-#   PUT  /_ultrawarm/migration/{index}
-#
-# Cold tier (/_cold/*):
-#   POST /_cold/migration/{index}/_cold    migrate index to cold tier
-#   POST /_cold/migration/{index}/_warm    migrate cold index back to warm
-#   POST /_cold/migration/_cancel/{index}  cancel cold migration
-#   GET  /_cold/migration/{index}/_status  cold migration status
-#   GET  /_cold/migration/_status          list all cold migrations
-#   POST /_cold/indices/_search            search cold indices
-#   GET  /_cold/_catalog                   cold tier catalog
+# AOS-only endpoints, paired with amazon-managed-block.overlay.yaml (the blocklist).
+# Scope is grounded in the managed-domain boundary allowlist and confirmed against a
+# live domain. Routes the boundary allows but the engine does not implement, verbs the
+# boundary blocks, and paths outside the allowlist are omitted.
 
 actions:
-  # DEFERRED field-level additions (add once the target schemas exist in the base spec):
-  #   - ISM policy action search_only
-  #   - alerting destination sns (topic_arn, role_arn)
-  #   - ml connector protocol value dns
-  #   - PPL query body params analyze/query_id/partial_result/warnings_supported/highlight
-  #   - flow-framework workflow _search field restrictions
-  #   - neural-search semantic_search_rewrite_processor + semantic_highlighting_batch
-  #   - query-insights top-queries recommendations
 
-  # =======================================================================
-  # UltraWarm (/_ultrawarm/migration/*)
-  # =======================================================================
-
-  # -----------------------------------------------------------------------
-  # PATH: POST /_ultrawarm/migration/{index}/_warm
-  # -----------------------------------------------------------------------
+  # --- UltraWarm migration (hot <-> warm <-> cold) ---
   - target: "$.paths"
-    description: Add POST /_ultrawarm/migration/{index}/_warm (hot-to-warm migration)
+    description: Add UltraWarm migration endpoints
     update:
-      /_ultrawarm/migration/{index}/_warm:
-        post:
-          operationId: ultrawarm.migrate_to_warm.0
-          x-operation-group: ultrawarm.migrate_to_warm
-          tags:
-            - UltraWarm
-          x-distributions:
-            - amazon-managed
-          x-version-added: '7.1'
-          description: >-
-            AOS only. Migrates an index from hot storage to UltraWarm (warm) storage.
-            The operation is asynchronous -- use GET /_ultrawarm/migration/{index}/_status
-            to poll migration progress.
-          externalDocs:
-            url: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ultrawarm.html
-          parameters:
-            - $ref: '#/components/parameters/ultrawarm.migrate___path.index'
-            - $ref: '#/components/parameters/ultrawarm.migrate___query.cluster_manager_timeout'
-            - $ref: '#/components/parameters/_global___query.pretty'
-            - $ref: '#/components/parameters/_global___query.human'
-            - $ref: '#/components/parameters/_global___query.error_trace'
-            - $ref: '#/components/parameters/_global___query.source'
-            - $ref: '#/components/parameters/_global___query.filter_path'
-          responses:
-            '200':
-              $ref: '#/components/responses/ultrawarm.migrate___200'
-
-  # -----------------------------------------------------------------------
-  # PATH: POST /_ultrawarm/migration/{index}/_hot
-  # -----------------------------------------------------------------------
-  - target: "$.paths"
-    description: Add POST /_ultrawarm/migration/{index}/_hot (warm-to-hot migration)
-    update:
-      /_ultrawarm/migration/{index}/_hot:
-        post:
-          operationId: ultrawarm.migrate_to_hot.0
-          x-operation-group: ultrawarm.migrate_to_hot
-          tags:
-            - UltraWarm
-          x-distributions:
-            - amazon-managed
-          x-version-added: '7.1'
-          description: >-
-            AOS only. Migrates an index from UltraWarm (warm) storage back to hot storage.
-            The operation is asynchronous.
-          externalDocs:
-            url: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ultrawarm.html
-          parameters:
-            - $ref: '#/components/parameters/ultrawarm.migrate___path.index'
-            - $ref: '#/components/parameters/ultrawarm.migrate___query.cluster_manager_timeout'
-            - $ref: '#/components/parameters/_global___query.pretty'
-            - $ref: '#/components/parameters/_global___query.human'
-            - $ref: '#/components/parameters/_global___query.error_trace'
-            - $ref: '#/components/parameters/_global___query.source'
-            - $ref: '#/components/parameters/_global___query.filter_path'
-          responses:
-            '200':
-              $ref: '#/components/responses/ultrawarm.migrate___200'
-
-  # -----------------------------------------------------------------------
-  # PATH: POST /_ultrawarm/migration/{index}/_cold
-  # -----------------------------------------------------------------------
-  - target: "$.paths"
-    description: Add POST /_ultrawarm/migration/{index}/_cold (warm-to-cold migration)
-    update:
-      /_ultrawarm/migration/{index}/_cold:
-        post:
-          operationId: ultrawarm.migrate_to_cold.0
-          x-operation-group: ultrawarm.migrate_to_cold
-          tags:
-            - UltraWarm
-          x-distributions:
-            - amazon-managed
-          x-version-added: '7.10'
-          description: >-
-            AOS only. Migrates an index from UltraWarm (warm) storage to Cold storage.
-            The operation is asynchronous.
-          externalDocs:
-            url: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/cold-storage.html
-          parameters:
-            - $ref: '#/components/parameters/ultrawarm.migrate___path.index'
-            - $ref: '#/components/parameters/ultrawarm.migrate___query.cluster_manager_timeout'
-            - $ref: '#/components/parameters/_global___query.pretty'
-            - $ref: '#/components/parameters/_global___query.human'
-            - $ref: '#/components/parameters/_global___query.error_trace'
-            - $ref: '#/components/parameters/_global___query.source'
-            - $ref: '#/components/parameters/_global___query.filter_path'
-          responses:
-            '200':
-              $ref: '#/components/responses/ultrawarm.migrate___200'
-
-  # -----------------------------------------------------------------------
-  # PATH: POST /_ultrawarm/migration/_cancel/{index}
-  # -----------------------------------------------------------------------
-  - target: "$.paths"
-    description: Add POST /_ultrawarm/migration/_cancel/{index} (cancel migration)
-    update:
-      /_ultrawarm/migration/_cancel/{index}:
-        post:
-          operationId: ultrawarm.cancel_migration.0
-          x-operation-group: ultrawarm.cancel_migration
-          tags:
-            - UltraWarm
-          x-distributions:
-            - amazon-managed
-          x-version-added: '7.1'
-          description: >-
-            AOS only. Cancels an in-progress UltraWarm index migration.
-            Only one index can be cancelled per request.
-          externalDocs:
-            url: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ultrawarm.html
-          parameters:
-            - $ref: '#/components/parameters/ultrawarm.migrate___path.index'
-            - $ref: '#/components/parameters/_global___query.pretty'
-            - $ref: '#/components/parameters/_global___query.human'
-            - $ref: '#/components/parameters/_global___query.error_trace'
-            - $ref: '#/components/parameters/_global___query.source'
-            - $ref: '#/components/parameters/_global___query.filter_path'
-          responses:
-            '200':
-              $ref: '#/components/responses/ultrawarm.migrate___200'
-
-  # -----------------------------------------------------------------------
-  # PATH: GET /_ultrawarm/migration/{index}/_status
-  # -----------------------------------------------------------------------
-  - target: "$.paths"
-    description: Add GET /_ultrawarm/migration/{index}/_status (single-index migration status)
-    update:
-      /_ultrawarm/migration/{index}/_status:
+      "/_ultrawarm/migration/_status":
         get:
-          operationId: ultrawarm.get_migration_status.0
-          x-operation-group: ultrawarm.get_migration_status
-          tags:
-            - UltraWarm
-          x-distributions:
-            - amazon-managed
-          x-version-added: '7.1'
-          description: >-
-            AOS only. Returns the migration status for a specific index.
-            Returns HTTP 400 when no migration is currently active for the index.
-          externalDocs:
-            url: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ultrawarm.html
-          parameters:
-            - $ref: '#/components/parameters/ultrawarm.migrate___path.index'
-            - $ref: '#/components/parameters/_global___query.pretty'
-            - $ref: '#/components/parameters/_global___query.human'
-            - $ref: '#/components/parameters/_global___query.error_trace'
-            - $ref: '#/components/parameters/_global___query.source'
-            - $ref: '#/components/parameters/_global___query.filter_path'
+          operationId: ultrawarm.list_status
+          tags: [UltraWarm]
+          description: List all in-progress UltraWarm migrations.
           responses:
-            '200':
-              $ref: '#/components/responses/ultrawarm.get_migration_status___200'
-
-  # -----------------------------------------------------------------------
-  # PATH: GET /_ultrawarm/migration/_status
-  # -----------------------------------------------------------------------
-  - target: "$.paths"
-    description: Add GET /_ultrawarm/migration/_status (cluster-wide migration status list)
-    update:
-      /_ultrawarm/migration/_status:
+            '200': { description: Migration status list }
+      "/_ultrawarm/migration/{index}/_status":
         get:
-          operationId: ultrawarm.list_migration_status.0
-          x-operation-group: ultrawarm.list_migration_status
-          tags:
-            - UltraWarm
-          x-distributions:
-            - amazon-managed
-          x-version-added: '7.1'
-          description: >-
-            AOS only. Returns the migration status for all indices currently undergoing
-            UltraWarm migration. Equivalent to /_cat/ultrawarm but returns JSON.
-          externalDocs:
-            url: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ultrawarm.html
+          operationId: ultrawarm.get_status
+          tags: [UltraWarm]
+          description: Migration status for a single index.
           parameters:
-            - $ref: '#/components/parameters/_global___query.pretty'
-            - $ref: '#/components/parameters/_global___query.human'
-            - $ref: '#/components/parameters/_global___query.error_trace'
-            - $ref: '#/components/parameters/_global___query.source'
-            - $ref: '#/components/parameters/_global___query.filter_path'
+            - { name: index, in: path, required: true, schema: { type: string } }
           responses:
-            '200':
-              $ref: '#/components/responses/ultrawarm.list_migration_status___200'
-
-  # -----------------------------------------------------------------------
-  # PATH: PUT /_ultrawarm/migration/{index}
-  # -----------------------------------------------------------------------
-  - target: "$.paths"
-    description: Add PUT /_ultrawarm/migration/{index} (update migration)
-    update:
-      /_ultrawarm/migration/{index}:
-        put:
-          operationId: ultrawarm.update_migration.0
-          x-operation-group: ultrawarm.update_migration
-          tags:
-            - UltraWarm
-          x-distributions:
-            - amazon-managed
-          x-version-added: '7.1'
-          description: >-
-            AOS only. Updates the configuration of an in-progress UltraWarm migration.
-          externalDocs:
-            url: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ultrawarm.html
-          parameters:
-            - $ref: '#/components/parameters/ultrawarm.migrate___path.index'
-            - $ref: '#/components/parameters/_global___query.pretty'
-            - $ref: '#/components/parameters/_global___query.human'
-            - $ref: '#/components/parameters/_global___query.error_trace'
-            - $ref: '#/components/parameters/_global___query.source'
-            - $ref: '#/components/parameters/_global___query.filter_path'
-          requestBody:
-            $ref: '#/components/requestBodies/ultrawarm.update_migration'
-          responses:
-            '200':
-              $ref: '#/components/responses/ultrawarm.migrate___200'
-
-  # =======================================================================
-  # Cold tier (/_cold/*)
-  # =======================================================================
-
-  # -----------------------------------------------------------------------
-  # PATH: POST /_cold/migration/{index}/_cold
-  # -----------------------------------------------------------------------
-  - target: "$.paths"
-    description: Add POST /_cold/migration/{index}/_cold (warm-to-cold migration)
-    update:
-      "/_cold/migration/{index}/_cold":
+            '200': { description: Migration status }
+      "/_ultrawarm/migration/{index}/_warm":
         post:
-          operationId: cold.migrate_to_cold
-          x-operation-group: cold.migrate_to_cold
-          tags:
-            - Cold Tier
-          x-distributions:
-            - amazon-managed
-          x-version-added: '1.0'
-          description: AOS only. Migrates an index from warm storage to cold storage.
+          operationId: ultrawarm.to_warm
+          tags: [UltraWarm]
+          description: Migrate an index from hot to warm storage.
           parameters:
-            - $ref: '#/components/parameters/cold.migrate_to_cold::path.index'
+            - { name: index, in: path, required: true, schema: { type: string } }
           responses:
-            '200':
-              $ref: '#/components/responses/cold.migrate_to_cold@200'
-
-  # -----------------------------------------------------------------------
-  # PATH: POST /_cold/migration/{index}/_warm
-  # -----------------------------------------------------------------------
-  - target: "$.paths"
-    description: Add POST /_cold/migration/{index}/_warm (cold-to-warm migration)
-    update:
-      "/_cold/migration/{index}/_warm":
+            '200': { description: Migration accepted }
+      "/_ultrawarm/migration/{index}/_hot":
         post:
-          operationId: cold.migrate_to_warm
-          x-operation-group: cold.migrate_to_warm
-          tags:
-            - Cold Tier
-          x-distributions:
-            - amazon-managed
-          x-version-added: '1.0'
-          description: AOS only. Migrates an index from cold storage back to warm storage.
+          operationId: ultrawarm.to_hot
+          tags: [UltraWarm]
+          description: Migrate an index from warm back to hot storage.
           parameters:
-            - $ref: '#/components/parameters/cold.migrate_to_warm::path.index'
+            - { name: index, in: path, required: true, schema: { type: string } }
           responses:
-            '200':
-              $ref: '#/components/responses/cold.migrate_to_warm@200'
-
-  # -----------------------------------------------------------------------
-  # PATH: POST /_cold/migration/_cancel/{index}
-  # -----------------------------------------------------------------------
-  - target: "$.paths"
-    description: Add POST /_cold/migration/_cancel/{index} (cancel cold migration)
-    update:
-      "/_cold/migration/_cancel/{index}":
+            '200': { description: Migration accepted }
+      "/_ultrawarm/migration/{index}/_cold":
         post:
-          operationId: cold.cancel_migration
-          x-operation-group: cold.cancel_migration
-          tags:
-            - Cold Tier
-          x-distributions:
-            - amazon-managed
-          x-version-added: '1.0'
-          description: AOS only. Cancels an ongoing cold tier migration for the specified index.
-          parameters:
-            - $ref: '#/components/parameters/cold.cancel_migration::path.index'
-          responses:
-            '200':
-              $ref: '#/components/responses/cold.cancel_migration@200'
-
-  # -----------------------------------------------------------------------
-  # PATH: GET /_cold/migration/{index}/_status
-  # -----------------------------------------------------------------------
-  - target: "$.paths"
-    description: Add GET /_cold/migration/{index}/_status (single-index cold migration status)
-    update:
-      "/_cold/migration/{index}/_status":
-        get:
-          operationId: cold.get_migration_status
-          x-operation-group: cold.get_migration_status
-          tags:
-            - Cold Tier
-          x-distributions:
-            - amazon-managed
-          x-version-added: '1.0'
-          description: AOS only. Returns the cold tier migration status for a specific index.
-          parameters:
-            - $ref: '#/components/parameters/cold.get_migration_status::path.index'
-          responses:
-            '200':
-              $ref: '#/components/responses/cold.get_migration_status@200'
-
-  # -----------------------------------------------------------------------
-  # PATH: GET /_cold/migration/_status
-  # -----------------------------------------------------------------------
-  - target: "$.paths"
-    description: Add GET /_cold/migration/_status (list all cold migrations)
-    update:
-      "/_cold/migration/_status":
-        get:
-          operationId: cold.list_migration_status
-          x-operation-group: cold.list_migration_status
-          tags:
-            - Cold Tier
-          x-distributions:
-            - amazon-managed
-          x-version-added: '1.0'
-          description: AOS only. Returns the cold tier migration status for all indices.
-          responses:
-            '200':
-              $ref: '#/components/responses/cold.list_migration_status@200'
-
-  # -----------------------------------------------------------------------
-  # PATH: POST /_cold/indices/_search
-  # -----------------------------------------------------------------------
-  - target: "$.paths"
-    description: Add POST /_cold/indices/_search (search cold indices)
-    update:
-      "/_cold/indices/_search":
-        post:
-          operationId: cold.search
-          x-operation-group: cold.search
-          tags:
-            - Cold Tier
-          x-distributions:
-            - amazon-managed
-          x-version-added: '1.0'
-          description: AOS only. Searches data stored in cold tier indices.
-          requestBody:
-            $ref: '#/components/requestBodies/search'
-          responses:
-            '200':
-              $ref: '#/components/responses/search@200'
-
-  # -----------------------------------------------------------------------
-  # PATH: GET /_cold/_catalog
-  # -----------------------------------------------------------------------
-  - target: "$.paths"
-    description: Add GET /_cold/_catalog (cold tier catalog)
-    update:
-      "/_cold/_catalog":
-        get:
-          operationId: cold.catalog
-          x-operation-group: cold.catalog
-          tags:
-            - Cold Tier
-          x-distributions:
-            - amazon-managed
-          x-version-added: '1.0'
-          description: AOS only. Returns the cold tier catalog listing all cold indices.
-          responses:
-            '200':
-              $ref: '#/components/responses/cold.catalog@200'
-
-  # =======================================================================
-  # COMPONENTS: parameters (UltraWarm + Cold)
-  # =======================================================================
-  - target: "$.components.parameters"
-    description: Add shared UltraWarm and Cold tier path/query parameters
-    update:
-      ultrawarm.migrate___path.index:
-        name: index
-        in: path
-        required: true
-        description: The name of the index to migrate. Only a single index is supported per request.
-        schema:
-          type: string
-        x-distributions:
-          - amazon-managed
-
-      ultrawarm.migrate___query.cluster_manager_timeout:
-        name: cluster_manager_timeout
-        in: query
-        required: false
-        description: >-
-          The amount of time to wait for a response from the cluster manager node.
-          Supports time units (e.g. "30s", "1m").
-        schema:
-          type: string
-        x-distributions:
-          - amazon-managed
-
-      "cold.migrate_to_cold::path.index":
-        name: index
-        in: path
-        required: true
-        schema:
-          type: string
-        description: Name of the index to migrate to cold storage.
-        x-distributions:
-          - amazon-managed
-      "cold.migrate_to_warm::path.index":
-        name: index
-        in: path
-        required: true
-        schema:
-          type: string
-        description: Name of the cold index to migrate back to warm storage.
-        x-distributions:
-          - amazon-managed
-      "cold.cancel_migration::path.index":
-        name: index
-        in: path
-        required: true
-        schema:
-          type: string
-        description: Name of the index whose cold migration to cancel.
-        x-distributions:
-          - amazon-managed
-      "cold.get_migration_status::path.index":
-        name: index
-        in: path
-        required: true
-        schema:
-          type: string
-        description: Name of the index to check cold migration status for.
-        x-distributions:
-          - amazon-managed
-
-  # =======================================================================
-  # COMPONENTS: responses (UltraWarm + Cold)
-  # =======================================================================
-  - target: "$.components.responses"
-    description: Add UltraWarm and Cold tier migration responses
-    update:
-      ultrawarm.migrate___200:
-        description: Migration request accepted.
-        content:
-          application/json:
-            schema:
-              type: object
-              x-distributions:
-                - amazon-managed
-              properties:
-                acknowledged:
-                  type: boolean
-                  description: Whether the migration request was accepted.
-
-      ultrawarm.get_migration_status___200:
-        description: Migration status for the requested index.
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ultrawarm._common___MigrationStatusResponse'
-
-      ultrawarm.list_migration_status___200:
-        description: List of all active migrations across the cluster.
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/ultrawarm._common___MigrationStatusEntry'
-
-      "cold.migrate_to_cold@200":
-        description: Cold migration initiated successfully.
-        content:
-          application/json:
-            schema:
-              type: object
-              x-distributions:
-                - amazon-managed
-              properties:
-                acknowledged:
-                  type: boolean
-      "cold.migrate_to_warm@200":
-        description: Warm migration from cold initiated successfully.
-        content:
-          application/json:
-            schema:
-              type: object
-              x-distributions:
-                - amazon-managed
-              properties:
-                acknowledged:
-                  type: boolean
-      "cold.cancel_migration@200":
-        description: Cold migration cancelled successfully.
-        content:
-          application/json:
-            schema:
-              type: object
-              x-distributions:
-                - amazon-managed
-              properties:
-                acknowledged:
-                  type: boolean
-      "cold.get_migration_status@200":
-        description: Cold migration status for the index.
-        content:
-          application/json:
-            schema:
-              type: object
-              x-distributions:
-                - amazon-managed
-      "cold.list_migration_status@200":
-        description: Cold migration status for all indices.
-        content:
-          application/json:
-            schema:
-              type: object
-              x-distributions:
-                - amazon-managed
-      "cold.catalog@200":
-        description: Cold tier catalog listing.
-        content:
-          application/json:
-            schema:
-              type: object
-              x-distributions:
-                - amazon-managed
-
-  # =======================================================================
-  # COMPONENTS: schemas (UltraWarm)
-  # =======================================================================
-  - target: "$.components.schemas"
-    description: Add UltraWarm migration schemas
-    update:
-      ultrawarm._common___MigrationStatusResponse:
-        type: object
-        x-distributions:
-          - amazon-managed
-        description: >-
-          Response from GET /_ultrawarm/migration/{index}/_status.
-          Contains the current migration state wrapped in a migration_status object.
-        properties:
-          migration_status:
-            $ref: '#/components/schemas/ultrawarm._common___MigrationStatus'
-
-      ultrawarm._common___MigrationStatus:
-        type: object
-        x-distributions:
-          - amazon-managed
-        description: Migration status for a single index.
-        properties:
-          index:
-            type: string
-            description: The index name.
-          state:
-            type: string
-            description: >-
-              Current migration state. Values include:
-              PENDING_FORCE_MERGE, RUNNING_FORCE_MERGE,
-              PENDING_FULL_SNAPSHOT, RUNNING_FULL_SNAPSHOT,
-              FINISHED_SHARD_RELOCATION, FAILED, FAILED_*.
-          migration_type:
-            type: string
-            description: Migration direction.
-            enum:
-              - HOT_TO_WARM
-              - WARM_TO_HOT
-              - WARM_TO_COLD
-          failure_reason:
-            type: string
-            description: Reason for failure when state begins with FAILED.
-          shard_level_status:
-            $ref: '#/components/schemas/ultrawarm._common___ShardLevelStatus'
-
-      ultrawarm._common___ShardLevelStatus:
-        type: object
-        x-distributions:
-          - amazon-managed
-        description: Per-shard migration counters.
-        properties:
-          pending:
-            type: integer
-            description: Shards waiting to start.
-          running:
-            type: integer
-            description: Shards currently migrating.
-          succeeded:
-            type: integer
-            description: Shards that completed successfully.
-          failed:
-            type: integer
-            description: Shards that failed.
-          total:
-            type: integer
-            description: Total shards in the migration.
-
-      ultrawarm._common___MigrationStatusEntry:
-        type: object
-        x-distributions:
-          - amazon-managed
-        description: A single entry in the cluster-wide migration status list.
-        properties:
-          index:
-            type: string
-            description: Index name.
-          migration_type:
-            type: string
-            description: Migration direction (HOT_TO_WARM, WARM_TO_HOT, WARM_TO_COLD).
-          state:
-            type: string
-            description: Current migration state.
-
-  # =======================================================================
-  # COMPONENTS: requestBodies (UltraWarm)
-  # =======================================================================
-  - target: "$.components.requestBodies"
-    description: Add UltraWarm update migration request body
-    update:
-      ultrawarm.update_migration:
-        description: Update migration configuration (body contents are implementation-defined).
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              x-distributions:
-                - amazon-managed
-              additionalProperties: true
-
-  # Index tiering status
-  - target: "$.paths"
-    description: Add GET /{index}/_tier (index tiering status)
-    update:
-      "/{index}/_tier":
-        get:
-          operationId: tier.get_status.0
-          x-operation-group: tier.get_status
-          tags:
-            - Tiering
+          operationId: ultrawarm.to_cold
+          tags: [UltraWarm]
           description: >-
-            Returns the hot/warm tiering status of an index.
+            Migrate a warm index to cold storage. Requires start_time and
+            end_time query parameters bounding the index's data.
           parameters:
-            - $ref: '#/components/parameters/tier___path.index'
-            - $ref: '#/components/parameters/_global___query.pretty'
-            - $ref: '#/components/parameters/_global___query.human'
-            - $ref: '#/components/parameters/_global___query.error_trace'
-            - $ref: '#/components/parameters/_global___query.filter_path'
+            - { name: index, in: path, required: true, schema: { type: string } }
+            - { name: start_time, in: query, required: true, schema: { type: string } }
+            - { name: end_time, in: query, required: true, schema: { type: string } }
           responses:
-            '200':
-              $ref: '#/components/responses/tier.get_status___200'
-  - target: "$.paths"
-    description: Add GET /_tier/all (cluster-wide tiering status)
-    update:
-      "/_tier/all":
-        get:
-          operationId: tier.list_status.0
-          x-operation-group: tier.list_status
-          tags:
-            - Tiering
-          description: >-
-            Lists tiering status across all indices.
+            '200': { description: Migration accepted }
+      "/_ultrawarm/migration/_cancel/{index}":
+        post:
+          operationId: ultrawarm.cancel
+          tags: [UltraWarm]
+          description: Cancel an in-progress UltraWarm migration.
           parameters:
-            - $ref: '#/components/parameters/_global___query.pretty'
-            - $ref: '#/components/parameters/_global___query.human'
-            - $ref: '#/components/parameters/_global___query.error_trace'
-            - $ref: '#/components/parameters/_global___query.filter_path'
+            - { name: index, in: path, required: true, schema: { type: string } }
           responses:
-            '200':
-              $ref: '#/components/responses/tier.list_status___200'
+            '200': { description: Cancellation accepted }
 
-  # Security API tokens
+  # --- Cold tier read APIs (the two paths the boundary allows) ---
   - target: "$.paths"
-    description: Add /_plugins/_security/api/apitokens (create/list)
+    description: Add Cold tier read endpoints
+    update:
+      "/_cold/indices/_info":
+        get:
+          operationId: cold.indices_info
+          tags: [Cold Tier]
+          description: >-
+            Information about cold-tier indices. Requires cold storage to be
+            enabled on the domain.
+          responses:
+            '200': { description: Cold indices info }
+      "/_cold/stats":
+        get:
+          operationId: cold.stats
+          tags: [Cold Tier]
+          description: >-
+            Cold-tier storage statistics. Requires cold storage to be enabled
+            on the domain.
+          responses:
+            '200': { description: Cold tier stats }
+
+  # --- Security API tokens (live-verified) ---
+  - target: "$.paths"
+    description: Add security API token endpoints
     update:
       "/_plugins/_security/api/apitokens":
-        post:
-          operationId: security.create_api_token.0
-          x-operation-group: security.create_api_token
-          tags:
-            - Security
-          description: Creates a security API token.
-          requestBody:
-            $ref: '#/components/requestBodies/security.create_api_token'
-          responses:
-            '200':
-              $ref: '#/components/responses/security.api_token___200'
         get:
-          operationId: security.list_api_tokens.0
-          x-operation-group: security.list_api_tokens
-          tags:
-            - Security
-          description: Lists security API tokens.
+          operationId: security.list_api_tokens
+          tags: [Security]
+          description: List security API tokens.
           responses:
-            '200':
-              $ref: '#/components/responses/security.api_token___200'
-  - target: "$.paths"
-    description: Add DELETE /_plugins/_security/api/apitokens/{id}
-    update:
+            '200': { description: API token list }
+        post:
+          operationId: security.create_api_token
+          tags: [Security]
+          description: Create a security API token.
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    name: { type: string }
+                    cluster_permissions: { type: array, items: { type: string } }
+                    index_permissions: { type: array, items: { type: object } }
+          responses:
+            '200': { description: API token created }
       "/_plugins/_security/api/apitokens/{id}":
         delete:
-          operationId: security.delete_api_token.0
-          x-operation-group: security.delete_api_token
-          tags:
-            - Security
-          description: Revokes a security API token.
+          operationId: security.delete_api_token
+          tags: [Security]
+          description: Revoke a security API token.
           parameters:
-            - $ref: '#/components/parameters/security.api_token___path.id'
+            - { name: id, in: path, required: true, schema: { type: string } }
           responses:
-            '200':
-              $ref: '#/components/responses/security.api_token___200'
+            '200': { description: API token revoked }
 
-  # Cross-cluster replication -- bulk API
-  # NOTE: only the create POST is added; status/cancel/task-status verbs to follow.
+  # --- PPL grammar (live-verified) ---
   - target: "$.paths"
-    description: Add POST /_plugins/_replication/_bulk/{index} (bulk replication)
-    update:
-      "/_plugins/_replication/_bulk/{index}":
-        post:
-          operationId: replication.bulk.0
-          x-operation-group: replication.bulk
-          tags:
-            - Cross-Cluster Replication
-          description: Starts bulk replication for the specified index.
-          parameters:
-            - $ref: '#/components/parameters/replication.bulk___path.index'
-          responses:
-            '200':
-              $ref: '#/components/responses/replication.bulk___200'
-
-  # PPL grammar
-  - target: "$.paths"
-    description: Add GET /_plugins/_ppl/_grammar (PPL grammar)
+    description: Add PPL grammar endpoint
     update:
       "/_plugins/_ppl/_grammar":
         get:
-          operationId: ppl.grammar.0
-          x-operation-group: ppl.grammar
-          tags:
-            - Query DSL
-          description: Returns the PPL grammar definition.
+          operationId: ppl.grammar
+          tags: [Query DSL]
+          description: Return the PPL grammar definition.
           responses:
-            '200':
-              $ref: '#/components/responses/ppl.grammar___200'
-
-  # =======================================================================
-  # COMPONENTS for the endpoint additions above
-  # =======================================================================
-  - target: "$.components.parameters"
-    description: Add path parameters for tiering / security-apitoken / replication-bulk
-    update:
-      tier___path.index:
-        name: index
-        in: path
-        required: true
-        description: The name of the index whose tiering status to return.
-        schema:
-          type: string
-      security.api_token___path.id:
-        name: id
-        in: path
-        required: true
-        description: The id of the API token to revoke.
-        schema:
-          type: string
-      replication.bulk___path.index:
-        name: index
-        in: path
-        required: true
-        description: The name of the index to bulk-replicate.
-        schema:
-          type: string
-  - target: "$.components.requestBodies"
-    description: Add the security API-token create request body
-    update:
-      security.create_api_token:
-        description: API token creation request.
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                cluster_permissions:
-                  type: array
-                  items:
-                    type: string
-                index_permissions:
-                  type: array
-                  items:
-                    type: object
-  - target: "$.components.responses"
-    description: Add responses for tiering / security-apitoken / replication-bulk / ppl-grammar
-    update:
-      tier.get_status___200:
-        description: Tiering status for the requested index.
-        content:
-          application/json:
-            schema:
-              type: object
-      tier.list_status___200:
-        description: Tiering status across all indices.
-        content:
-          application/json:
-            schema:
-              type: object
-      security.api_token___200:
-        description: API token operation result.
-        content:
-          application/json:
-            schema:
-              type: object
-      replication.bulk___200:
-        description: Bulk replication accepted.
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                acknowledged:
-                  type: boolean
-      ppl.grammar___200:
-        description: PPL grammar definition.
-        content:
-          application/json:
-            schema:
-              type: object
+            '200': { description: PPL grammar definition }

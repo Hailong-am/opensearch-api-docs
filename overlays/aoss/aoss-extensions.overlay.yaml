@@ -1,9 +1,7 @@
-# Amazon OpenSearch Serverless — hand-authored overlay (additions + schema/param removes).
-# The generated path-block file (amazon-serverless-block.overlay.yaml) is produced by
-# tools/generate-aoss-allowlist.py — never hand-edit it. This file carries what the
-# path allowlist can't express: field/param-level removes on KEPT schemas and AOSS-only
-# additions. Removes come first so an add never targets a map a later remove touches.
-# Requires speakeasy: section 1 uses $ref filter predicates that openapi-overlays-js rejects.
+# Amazon OpenSearch Serverless -- hand-authored overlay (additions + removes).
+# The generated path-block file (amazon-serverless-block.overlay.yaml) is produced
+# by tools/generate-aoss-allowlist.py -- never hand-edit it. Removes come before
+# adds. Requires speakeasy ($ref filter predicates).
 overlay: 1.0.0
 info:
   title: Amazon OpenSearch Serverless - hand-authored overlay (additions + removes)
@@ -11,8 +9,7 @@ info:
 extends: ./opensearch-openapi.yaml
 
 actions:
-  # 1. Remove the write-op `refresh` param: AOSS rejects every explicit value
-  #    (true/wait_for -> 400), only the default false works, so it is meaningless.
+  # 1. Remove the write-op `refresh` param (AOSS rejects every explicit value).
   - target: '$.paths[*][*].parameters[?(@.$ref =~ /query\.refresh$/)]'
     remove: true
   - target: '$.components.parameters[*][?(@.name == "refresh" && @.in == "query")]'
@@ -20,42 +17,41 @@ actions:
   - target: "$.components.schemas['_common___Refresh']"
     remove: true
 
-  # 2. Remove number_of_shards/replicas: AOSS owns shard topology; these are not
-  #    settable on any account (no dynamic-config escape hatch).
+  # 2. Remove number_of_shards/replicas (AOSS owns shard topology).
   - target: "$.components.schemas['indices._common___IndexSettings'].properties.number_of_shards"
     remove: true
   - target: "$.components.schemas['indices._common___IndexSettings'].properties.number_of_replicas"
     remove: true
 
-  # 3. Add AOSS-only V2 data-lifecycle index settings (no OSS counterpart).
+  # 3. Add V2 data-lifecycle index settings.
   - target: "$.components.schemas['indices._common___IndexSettings'].properties"
     update:
       data.retention:
         $ref: '#/components/schemas/_common___Duration'
-        description: 'AOSS-only. Data-retention period for a V2 index (duration, e.g. `7d`).'
+        description: 'Data-retention period for a V2 index (duration, e.g. `7d`).'
       warm.after:
         $ref: '#/components/schemas/_common___Duration'
-        description: 'AOSS-only. Age after which an index migrates hot -> warm (duration, e.g. `30d`).'
+        description: 'Age after which an index migrates hot -> warm (duration, e.g. `30d`).'
       timestamp_field:
         $ref: '#/components/schemas/_common___Field'
-        description: 'AOSS-only. Document field holding the event timestamp that drives time-based lifecycle.'
+        description: 'Document field holding the event timestamp that drives time-based lifecycle.'
 
-  # 4. Add AOSS-only snapshot fields (cross-collection restore). Absent from OSS.
+  # 4. Add snapshot fields (cross-collection restore).
   - target: "$.components.requestBodies['snapshot.restore'].content['application/json'].schema.properties"
     update:
       sourceCollectionId:
         type: string
         pattern: '^[a-z0-9]{3,40}$'
-        description: 'AOSS-only. Source collection to restore from (cross-collection restore); requires the CCR feature flag. Omit to restore from the same collection.'
+        description: 'Source collection to restore from (cross-collection restore); requires the CCR feature flag. Omit to restore from the same collection.'
       allow_regex:
         type: boolean
         default: false
-        description: 'AOSS-only. When true, rename_pattern/replacement use Java regex with capture groups (e.g. $1); false = plain strings (OSS behaviour).'
+        description: 'When true, rename_pattern/replacement use Java regex with capture groups (e.g. $1); false = plain strings.'
   - target: "$.paths['/_snapshot/{repository}/{snapshot}'].get"
     update:
       requestBody:
         required: false
-        description: 'AOSS-only. Scopes snapshot listing to a source collection for CCR preflight.'
+        description: 'Scopes snapshot listing to a source collection for CCR preflight.'
         content:
           application/json:
             schema:
@@ -64,9 +60,9 @@ actions:
                 sourceCollectionId:
                   type: string
                   pattern: '^[a-z0-9]{3,40}$'
-                  description: 'AOSS-only. Source collection whose snapshot repository to list; requires the CCR feature flag.'
+                  description: 'Source collection whose snapshot repository to list; requires the CCR feature flag.'
 
-  # 5. AOSS snapshot repository is fixed (aoss-automated) — description only.
+  # 5. Snapshot repository is fixed (aoss-automated).
   - target: "$.components.parameters['snapshot.get___path.repository']"
     update:
       description: 'On AOSS the snapshot repository is fixed: use `aoss-automated`. Custom repositories and wildcards are not supported.'

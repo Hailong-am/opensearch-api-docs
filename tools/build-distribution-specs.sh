@@ -11,7 +11,7 @@
 # a fresh upstream base on purpose (e.g. once #1242 has merged upstream).
 #
 #   - Base OSS spec:      spec/opensearch-openapi.yaml  (COMMITTED, tagged; the default)
-#   - AOS overlays:       overlays/aos/amazon-managed.overlay.yaml (blocklist),
+#   - AOS overlays:       overlays/aos/amazon-managed-block.overlay.yaml (blocklist),
 #                         overlays/aos/aos-extensions.overlay.yaml (UltraWarm + Cold, AOS-only, tagged inline)
 #   - AOSS overlays:      overlays/aoss/amazon-serverless-block.overlay.yaml (GENERATED allowlist),
 #                         overlays/aoss/aoss-extensions.overlay.yaml (hand-authored, merged: snapshot + index
@@ -89,7 +89,7 @@ echo "--- AOS ---"
 echo "  Step 1: Apply remove overlay (blocklist)"
 "$SPEAKEASY" overlay apply \
   --schema "$BASE_SPEC" \
-  --overlay "$OVERLAYS_DIR/aos/amazon-managed.overlay.yaml" \
+  --overlay "$OVERLAYS_DIR/aos/amazon-managed-block.overlay.yaml" \
   > "$BUILD_DIR/opensearch-openapi-aos.yaml"
 
 echo "  Step 2: Apply AOS-only extensions overlay (UltraWarm + Cold tier)"

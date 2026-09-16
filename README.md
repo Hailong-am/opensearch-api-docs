@@ -22,7 +22,7 @@ spec/
   aoss-dp-api-allowlist.md  AOSS customer-facing DP API allowlist (SOURCE OF TRUTH for AOSS;
                             from parser V2 doc/APIs.md). Drives the generated AOSS overlay.
 overlays/
-  amazon-managed.overlay.yaml               AOS blocklist (remove-only, hand-maintained)
+  amazon-managed-block.overlay.yaml         AOS blocklist (remove-only, hand-maintained)
   amazon-serverless-block.overlay.yaml  AOSS surface (GENERATED — do not hand-edit;
                                             everything not in the allowlist is removed)
   aos-extensions.overlay.yaml               AOS UltraWarm + Cold Tier additions
