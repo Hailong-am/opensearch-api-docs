@@ -136,8 +136,11 @@
         const isDark = () => document.querySelector('.dark-mode') !== null;
         const syncIcon = () => document.body.classList.toggle('banner-dark', isDark());
 
+        // Watch both class mutations AND node insertions: Scalar may add a
+        // fresh element that already carries .dark-mode (rather than mutating
+        // an existing class), which an attribute-only observer would miss.
         new MutationObserver(syncIcon).observe(document.documentElement, {
-          subtree: true, attributes: true, attributeFilter: ['class'],
+          subtree: true, childList: true, attributes: true, attributeFilter: ['class'],
         });
 
         const scalarToggle = () =>
@@ -149,7 +152,20 @@
           setTimeout(syncIcon, 0);   // reflect it after Scalar re-renders
         });
 
+        // Scalar mounts asynchronously and restores the persisted theme after
+        // this script runs, so a single sync races its mount. Re-sync on a
+        // short poll until Scalar has mounted (then the observer keeps it in
+        // step). Fixes the logo/icon not matching a persisted dark theme on
+        // load.
         syncIcon();
+        let tries = 0;
+        const initialSync = setInterval(() => {
+          syncIcon();
+          if (++tries >= 20 || document.querySelector('button[class*="group/toggle"]')) {
+            clearInterval(initialSync);
+            syncIcon();
+          }
+        }, 100);
       })();
 
 
