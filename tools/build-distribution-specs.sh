@@ -157,6 +157,15 @@ python3 "$TOOLS_DIR/strip-deprecated.py" "$BUILD_DIR/opensearch-openapi-aos-full
 python3 "$TOOLS_DIR/strip-deprecated.py" "$BUILD_DIR/opensearch-openapi-aoss-full.json" "$BUILD_DIR/opensearch-openapi-aoss-tagged.json" --no-version
 
 echo ""
+echo "--- Inject OpenSearch client code samples (x-codeSamples) ---"
+# Replace Scalar's generic auto-generated HTTP snippets with uniform low-level
+# transport samples for each official OpenSearch client. index.html sets
+# hiddenClients:true so only these render. In-place on the final render targets.
+python3 "$TOOLS_DIR/add-client-examples.py" "$BUILD_DIR/opensearch-openapi-oss-tagged.json"
+python3 "$TOOLS_DIR/add-client-examples.py" "$BUILD_DIR/opensearch-openapi-aos-tagged.json"
+python3 "$TOOLS_DIR/add-client-examples.py" "$BUILD_DIR/opensearch-openapi-aoss-tagged.json"
+
+echo ""
 echo "=== Done ==="
 echo "Output files:"
 ls -lh "$BUILD_DIR"/*-tagged.json

@@ -1,6 +1,18 @@
 openapi: 3.1.0
 info:
-  title: OpenSearch API Specification
+  title: OpenSearch API Reference
+  # OSS document overview. OSS has no overlay (it IS the base spec), so its
+  # info title/description live here; the AOS/AOSS overlays override $.info
+  # with their own title + getting-started description. Scalar renders
+  # info.description as the intro at the top of the reference.
+  # NOTE: REFRESH_BASE=1 overwrites this file from upstream and would drop
+  # these two edits (title + description); re-apply them after a refresh.
+  description: |-
+    REST API reference for **OpenSearch**, the open-source search and analytics suite.
+
+    Every operation maps to an OpenSearch REST endpoint. Code samples use the official OpenSearch client libraries (curl, Python, JavaScript, Java, Go, Ruby, PHP, C#, Rust).
+
+    Use the distribution switcher at the top to view the **Amazon OpenSearch Service** or **Amazon OpenSearch Serverless** surfaces.
   version: 0.3.0
   x-api-version: 2.16.0
 paths:

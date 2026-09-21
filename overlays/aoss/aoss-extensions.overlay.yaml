@@ -9,6 +9,27 @@ info:
 extends: ./opensearch-openapi.yaml
 
 actions:
+  # 0. Document header: title + getting-started overview (Scalar renders
+  #    info.description as the intro at the top of the reference).
+  - target: "$.info"
+    description: Set the AOSS document title and getting-started overview
+    update:
+      title: Amazon OpenSearch Serverless API Reference
+      description: |-
+        REST API reference for **Amazon OpenSearch Serverless**.
+
+        This surface is limited to the customer-facing data-plane API supported by Serverless collections; cluster- and node-level operations that do not apply to Serverless are removed.
+
+        Code samples use the official OpenSearch client libraries.
+
+        ## Getting started
+
+        1. **Create a collection** — in the AWS Console or with the AWS CLI (`aws opensearchserverless create-collection`); pick a collection type (Search, Time series, or Vector search).
+        2. **Attach policies** — an encryption policy, a network policy, and a data access policy that grants your IAM principal access to the collection.
+        3. **Get the collection endpoint** — your collection's endpoint, e.g. `https://<id>.<region>.aoss.amazonaws.com`.
+        4. **Authenticate** — sign requests with AWS SigV4 (IAM, service name `aoss`); Serverless does not use HTTP basic auth.
+        5. **Call the API** — send requests to the endpoint using any operation below.
+
   # 1. Remove the write-op `refresh` param (AOSS rejects every explicit value).
   - target: '$.paths[*][*].parameters[?(@.$ref =~ /query\.refresh$/)]'
     remove: true

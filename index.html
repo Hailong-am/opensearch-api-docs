@@ -189,7 +189,14 @@
         documentDownloadType: 'both',
         searchHotKey: 'k',
         defaultHttpClient: { targetKey: 'shell', clientKey: 'curl' },
-        hiddenClients: [],
+        // Hide ALL of Scalar's auto-generated HTTP snippets. They're generic
+        // (requests, axios, okhttp, ...) and unrelated to OpenSearch. The build
+        // injects `x-codeSamples` on every operation with uniform low-level
+        // transport calls for each official OpenSearch client (curl, Python,
+        // JS/Node, Java, Go, Ruby, PHP, C#, Rust) via
+        // tools/add-client-examples.py; custom samples still render when
+        // hiddenClients is true, so only the OpenSearch-client set shows.
+        hiddenClients: true,
         telemetry: false,
       };
 

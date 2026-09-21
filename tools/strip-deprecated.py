@@ -8,6 +8,7 @@ Preprocess OpenSearch OpenAPI spec:
 import json
 import sys
 
+
 def process_spec(spec, inject_version=True):
     removed = 0
     empty_paths = []
@@ -15,16 +16,12 @@ def process_spec(spec, inject_version=True):
     # Drop the upstream spec version (info.version, e.g. "0.3.0"): it is the
     # opensearch-api-specification repo's own version and is meaningless for a
     # distribution reference doc. Scalar renders it as a "v0.3.0" badge; without
-    # it the badge disappears.
+    # it the badge disappears. The document title + overview description are set
+    # per distribution by the overlays ($.info update actions) for AOS/AOSS and
+    # by the committed base spec for OSS -- NOT here, so this stays generic.
     info = spec.get('info')
     if isinstance(info, dict):
         info.pop('version', None)
-        # For the serverless (AOSS) reference doc, retitle the document header
-        # from the generic upstream "OpenSearch API Specification" to
-        # "AOSS API Specification" so the rendered header names the distribution.
-        # Gated on the same --no-version flag that marks the AOSS build.
-        if not inject_version:
-            info['title'] = 'AOSS API Specification'
 
     # Build the set of shared component parameters that are marked deprecated,
     # so we can drop operation-level $refs that point at them. master_timeout
@@ -99,13 +96,13 @@ if __name__ == '__main__':
     if len(args) < 2:
         print(f"Usage: {sys.argv[0]} <input.json> <output.json> [--no-version]")
         sys.exit(1)
-    
+
     with open(args[0]) as f:
         spec = json.load(f)
-    
-    total_before = sum(1 for p in spec['paths'].values() for m, op in p.items() 
+
+    total_before = sum(1 for p in spec['paths'].values() for m, op in p.items()
                        if isinstance(op, dict) and 'operationId' in op)
-    
+
     removed, empty, removed_params = process_spec(spec, inject_version=inject_version)
     
     total_after = sum(1 for p in spec['paths'].values() for m, op in p.items() 
